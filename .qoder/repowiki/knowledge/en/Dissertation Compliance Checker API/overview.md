@@ -1,0 +1,1 @@
+Validates DOCX dissertations against GOST 7.32-2017 standards for structure, formatting, and citations via a FastAPI service.
