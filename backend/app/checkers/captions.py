@@ -1,13 +1,107 @@
-"""CaptionChecker — stub, implemented by Dev B in Task 5."""
+"""CaptionChecker — validates figure and table captions per GOST 7.32-2017 Sec. 6.5/6.6."""
 
 from app.checkers.base import BaseChecker
-from app.core.models import Issue
+from app.core.models import Issue, IssueLocation
 from app.parser.structures import ParsedDocument
 
 
 class CaptionChecker(BaseChecker):
     name = "captions"
-    description = "Validates figure and table captions"
+    description = "Validates figure and table captions per GOST 7.32-2017"
 
     def check(self, document: ParsedDocument) -> list[Issue]:
-        return []  # Implemented in Task 5
+        issues: list[Issue] = []
+        issues.extend(self._check_figures(document))
+        issues.extend(self._check_tables(document))
+        return issues
+
+    def _check_figures(self, document: ParsedDocument) -> list[Issue]:
+        issues = []
+        prev_number_parts: dict[str, int] = {}  # chapter -> last number
+
+        for fig in document.figures:
+            if not fig.has_caption:
+                issues.append(Issue(
+                    severity="error",
+                    category="captions",
+                    checker=self.name,
+                    location=IssueLocation(
+                        paragraph_index=fig.paragraph_index,
+                        context_text="Figure without caption",
+                    ),
+                    message="Figure is missing a caption",
+                    suggestion="Add a caption below the figure in format 'Сурет X.Y — Title'",
+                    rule_ref="Sec. 6.5",
+                ))
+                continue
+
+            if fig.caption_position != "below":
+                issues.append(Issue(
+                    severity="error",
+                    category="captions",
+                    checker=self.name,
+                    location=IssueLocation(
+                        paragraph_index=fig.caption_paragraph_index,
+                        context_text=fig.title or "",
+                    ),
+                    message="Figure caption must be placed BELOW the figure",
+                    suggestion="Move the figure caption to below the figure",
+                    rule_ref="Sec. 6.5",
+                ))
+
+            # Check sequential numbering
+            if fig.number:
+                parts = fig.number.split(".")
+                if len(parts) == 2:
+                    chapter, num = parts[0], int(parts[1]) if parts[1].isdigit() else 0
+                    last = prev_number_parts.get(chapter, 0)
+                    if num != last + 1 and last > 0:
+                        issues.append(Issue(
+                            severity="warning",
+                            category="captions",
+                            checker=self.name,
+                            location=IssueLocation(
+                                paragraph_index=fig.paragraph_index,
+                                context_text=fig.title or "",
+                            ),
+                            message=f"Figure numbering not sequential: expected {chapter}.{last + 1}, got {fig.number}",
+                            suggestion="Ensure figures are numbered sequentially within each chapter",
+                            rule_ref="Sec. 6.5",
+                        ))
+                    prev_number_parts[chapter] = num
+
+        return issues
+
+    def _check_tables(self, document: ParsedDocument) -> list[Issue]:
+        issues = []
+        for table in document.tables:
+            if not table.has_caption:
+                issues.append(Issue(
+                    severity="error",
+                    category="captions",
+                    checker=self.name,
+                    location=IssueLocation(
+                        paragraph_index=table.paragraph_index,
+                        context_text="Table without caption",
+                    ),
+                    message="Table is missing a caption",
+                    suggestion="Add a caption above the table in format 'Кесте X.Y — Title'",
+                    rule_ref="Sec. 6.6",
+                ))
+                continue
+
+            if table.caption_position != "above":
+                issues.append(Issue(
+                    severity="error",
+                    category="captions",
+                    checker=self.name,
+                    location=IssueLocation(
+                        paragraph_index=table.caption_paragraph_index,
+                        context_text=table.title or "",
+                    ),
+                    message="Table caption must be placed ABOVE the table",
+                    suggestion="Move the table caption to above the table",
+                    rule_ref="Sec. 6.6",
+                ))
+
+        return issues
