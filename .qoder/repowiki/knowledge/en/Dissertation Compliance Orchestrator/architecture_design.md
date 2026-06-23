@@ -1,0 +1,3 @@
+- The `CheckerRunner` in `app/runner.py` implements the Strategy pattern, iterating over `BaseChecker` implementations to aggregate issues.
+- `app/api/routes.py` wires the pipeline: it instantiates specific checkers (Structure, Formatting, etc.), registers them with the runner, and triggers execution after `docx_parser` produces a `ParsedDocument`.
+- Shared `app/core/models.py` defines the `Issue` and `Report` contracts that decouple checkers from the API layer.

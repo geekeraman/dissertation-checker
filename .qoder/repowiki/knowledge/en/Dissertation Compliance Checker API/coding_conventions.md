@@ -1,0 +1,3 @@
+- Checkers follow a Strategy pattern where each concrete checker extends `BaseChecker` and implements a `check` method that returns a list of `Issue` objects.
+- Domain logic uses dataclasses for internal models (`app/core/models.py`) while Pydantic models are reserved exclusively for API boundary serialization (`app/api/schemas.py`).
+- Validation rules reference specific GOST 7.32-2017 sections (e.g., 'Sec. 6.2', 'Sec. 6.4') in the `rule_ref` field of issued problems.

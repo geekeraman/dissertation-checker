@@ -1,0 +1,41 @@
+schema_version: 1
+module_path: ""
+title: Dissertation Compliance Orchestrator
+scope:
+    - .gitignore
+    - README.md
+    - backend\app\__init__.py
+    - backend\app\api\__init__.py
+    - backend\app\api\routes.py
+    - backend\app\api\schemas.py
+    - backend\app\checkers\__init__.py
+    - backend\app\checkers\base.py
+    - backend\app\checkers\captions.py
+    - backend\app\checkers\citations.py
+    - backend\app\checkers\formatting.py
+    - backend\app\checkers\spacing.py
+    - backend\app\checkers\structure.py
+    - backend\app\core\__init__.py
+    - backend\app\core\config.py
+    - backend\app\core\models.py
+    - backend\app\main.py
+    - backend\app\parser\__init__.py
+    - backend\app\parser\docx_parser.py
+    - backend\app\parser\structures.py
+    - backend\app\runner.py
+    - backend\dissertation_checker.egg-info\PKG-INFO
+    - backend\dissertation_checker.egg-info\SOURCES.txt
+    - backend\dissertation_checker.egg-info\dependency_links.txt
+    - backend\dissertation_checker.egg-info\requires.txt
+    - backend\dissertation_checker.egg-info\top_level.txt
+    - backend\pyproject.toml
+    - backend\tests\__init__.py
+    - backend\tests\conftest.py
+    - backend\tests\test_formatting.py
+    - backend\tests\test_parser.py
+    - backend\tests\test_structure.py
+    - docs\design.md
+    - docs\plan.md
+source_files: []
+depends_on: []
+related_to: []

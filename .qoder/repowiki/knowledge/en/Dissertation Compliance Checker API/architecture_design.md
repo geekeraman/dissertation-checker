@@ -1,0 +1,4 @@
+- Entry point `app/main.py` initializes a FastAPI app with CORS and includes the `app/api/routes.py` router.
+- The `/api/check` endpoint orchestrates the workflow: it accepts a DOCX upload, parses it using `app/parser/docx_parser.py` into a `ParsedDocument`, and executes a chain of checkers via `app/runner.py`.
+- Checkers (e.g., `StructureChecker`, `FormattingChecker`) implement the `BaseChecker` abstract interface defined in `app/checkers/base.py`, ensuring a pluggable architecture for different validation rules.
+- Domain models (`Issue`, `Report`) are defined in `app/core/models.py` and mapped to Pydantic schemas in `app/api/schemas.py` for API responses.

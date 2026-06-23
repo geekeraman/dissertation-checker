@@ -1,0 +1,1 @@
+FastAPI with Uvicorn for the web layer; python-docx for document parsing; Pydantic v2 for data validation and settings management.
