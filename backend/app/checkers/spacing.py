@@ -6,7 +6,6 @@ from app.core.models import Issue, IssueLocation
 from app.parser.structures import ParsedDocument
 
 
-EXPECTED_LINE_SPACING = 1.5
 MAX_CONSECUTIVE_BLANK_LINES = 2
 
 
@@ -19,7 +18,6 @@ class SpacingChecker(BaseChecker):
         issues.extend(self._check_trailing_whitespace(document))
         issues.extend(self._check_consecutive_spaces(document))
         issues.extend(self._check_blank_lines(document))
-        issues.extend(self._check_line_spacing(document))
         issues.extend(self._check_tabs(document))
         return issues
 
@@ -95,26 +93,6 @@ class SpacingChecker(BaseChecker):
                 message=f"Too many blank lines ({consecutive_blank}) at end of document",
                 suggestion=f"Reduce to at most {MAX_CONSECUTIVE_BLANK_LINES} blank lines",
             ))
-        return issues
-
-    def _check_line_spacing(self, document: ParsedDocument) -> list[Issue]:
-        issues = []
-        for para in document.paragraphs:
-            if not para.text.strip():
-                continue
-            if para.line_spacing and abs(para.line_spacing - EXPECTED_LINE_SPACING) > 0.1:
-                issues.append(Issue(
-                    severity="error",
-                    category="spacing",
-                    checker=self.name,
-                    location=IssueLocation(
-                        paragraph_index=para.paragraph_index,
-                        context_text=para.text[:80],
-                    ),
-                    message=f"Line spacing is {para.line_spacing}, expected {EXPECTED_LINE_SPACING}",
-                    suggestion="Set line spacing to 1.5 for this paragraph",
-                    rule_ref="Sec. 6.2",
-                ))
         return issues
 
     def _check_tabs(self, document: ParsedDocument) -> list[Issue]:

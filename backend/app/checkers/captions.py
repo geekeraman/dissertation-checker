@@ -4,6 +4,9 @@ from app.checkers.base import BaseChecker
 from app.core.models import Issue, IssueLocation
 from app.parser.structures import ParsedDocument
 
+FIGURE_PREFIXES = ("сурет", "рисунок", "figure", "fig.")
+TABLE_PREFIXES = ("кесте", "таблица", "table")
+
 
 class CaptionChecker(BaseChecker):
     name = "captions"
@@ -48,6 +51,24 @@ class CaptionChecker(BaseChecker):
                     suggestion="Move the figure caption to below the figure",
                     rule_ref="Sec. 6.5",
                 ))
+
+            # Check caption format (Kazakh: "Сурет X.Y", Russian: "Рисунок X.Y")
+            if fig.has_caption and fig.title:
+                title_lower = fig.title.strip().lower()
+                has_valid_prefix = any(title_lower.startswith(prefix) for prefix in FIGURE_PREFIXES)
+                if not has_valid_prefix:
+                    issues.append(Issue(
+                        severity="warning",
+                        category="captions",
+                        checker=self.name,
+                        location=IssueLocation(
+                            paragraph_index=fig.caption_paragraph_index,
+                            context_text=fig.title[:80] if fig.title else "",
+                        ),
+                        message="Figure caption should start with 'Сурет' (Kazakh), 'Рисунок' (Russian), or 'Figure'",
+                        suggestion="Format caption as 'Сурет X.Y – Title' per GOST standard",
+                        rule_ref="Sec. 6.5",
+                    ))
 
             # Check sequential numbering
             if fig.number:
@@ -103,5 +124,23 @@ class CaptionChecker(BaseChecker):
                     suggestion="Move the table caption to above the table",
                     rule_ref="Sec. 6.6",
                 ))
+
+            # Check caption format (Kazakh: "Кесте X.Y", Russian: "Таблица X.Y")
+            if table.has_caption and table.title:
+                title_lower = table.title.strip().lower()
+                has_valid_prefix = any(title_lower.startswith(prefix) for prefix in TABLE_PREFIXES)
+                if not has_valid_prefix:
+                    issues.append(Issue(
+                        severity="warning",
+                        category="captions",
+                        checker=self.name,
+                        location=IssueLocation(
+                            paragraph_index=table.caption_paragraph_index,
+                            context_text=table.title[:80] if table.title else "",
+                        ),
+                        message="Table caption should start with 'Кесте' (Kazakh), 'Таблица' (Russian), or 'Table'",
+                        suggestion="Format caption as 'Кесте X.Y – Title' per GOST standard",
+                        rule_ref="Sec. 6.6",
+                    ))
 
         return issues

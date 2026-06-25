@@ -1,0 +1,4 @@
+- Implements the Strategy pattern via `BaseChecker` (abstract base class in `base.py`) defining a uniform `check()` interface.
+- Each concrete checker (`StructureChecker`, `FormattingChecker`, `CaptionChecker`, `SpacingChecker`, `CitationChecker`) encapsulates a specific domain of GOST rules.
+- Checkers depend on `ParsedDocument` from `app.parser.structures` as input and return lists of `Issue` objects from `app.core.models`.
+- `CitationChecker` is currently a stub, deferred to a later development task.

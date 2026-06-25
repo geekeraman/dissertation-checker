@@ -10,6 +10,8 @@ EXPECTED_FONT_SIZE = 14.0
 EXPECTED_LINE_SPACING = 1.5
 EXPECTED_MARGINS = {"left": 3.0, "right": 1.0, "top": 2.0, "bottom": 2.0}
 MARGIN_TOLERANCE = 0.2  # cm
+EXPECTED_INDENT = 1.25  # cm
+INDENT_TOLERANCE = 0.15  # cm
 
 
 class FormattingChecker(BaseChecker):
@@ -21,6 +23,8 @@ class FormattingChecker(BaseChecker):
         issues.extend(self._check_margins(document))
         issues.extend(self._check_paragraph_formatting(document))
         issues.extend(self._check_heading_style(document))
+        issues.extend(self._check_paragraph_indent(document))
+        issues.extend(self._check_page_numbering(document))
         return issues
 
     def _check_margins(self, document: ParsedDocument) -> list[Issue]:
@@ -170,4 +174,56 @@ class FormattingChecker(BaseChecker):
                     rule_ref="Sec. 6.2",
                 ))
 
+            # Center alignment check
+            if para.alignment and para.alignment != "center":
+                issues.append(Issue(
+                    severity="warning",
+                    category="formatting",
+                    checker=self.name,
+                    location=IssueLocation(
+                        paragraph_index=para.paragraph_index,
+                        context_text=text[:80],
+                    ),
+                    message=f"Heading should be centered, but is '{para.alignment}'",
+                    suggestion="Set heading alignment to Center",
+                    rule_ref="Sec. 6.2",
+                ))
+
+        return issues
+
+    def _check_paragraph_indent(self, document: ParsedDocument) -> list[Issue]:
+        issues = []
+        for para in document.paragraphs:
+            if not para.text.strip() or para.is_heading:
+                continue
+            if para.first_line_indent is not None:
+                if abs(para.first_line_indent - EXPECTED_INDENT) > INDENT_TOLERANCE:
+                    issues.append(Issue(
+                        severity="warning",
+                        category="formatting",
+                        checker=self.name,
+                        location=IssueLocation(
+                            paragraph_index=para.paragraph_index,
+                            context_text=para.text[:80],
+                        ),
+                        message=f"First-line indent is {para.first_line_indent:.2f}cm, expected {EXPECTED_INDENT}cm",
+                        suggestion=f"Set paragraph first-line indent to {EXPECTED_INDENT}cm",
+                        rule_ref="Sec. 6.2",
+                    ))
+        return issues
+
+    def _check_page_numbering(self, document: ParsedDocument) -> list[Issue]:
+        """Advisory check — python-docx has limited page number detection."""
+        issues = []
+        # Only provide advisory if page count is 0 (suggests no page numbers detected)
+        if document.page_count == 0:
+            issues.append(Issue(
+                severity="info",
+                category="formatting",
+                checker=self.name,
+                location=IssueLocation(),
+                message="Page numbering could not be verified — ensure Arabic numerals at bottom-center",
+                suggestion="Add page numbers: Insert > Page Number > Bottom of Page > Center",
+                rule_ref="Sec. 6.2",
+            ))
         return issues

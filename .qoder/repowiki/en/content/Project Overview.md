@@ -5,12 +5,17 @@
 - [README.md](file://README.md)
 - [design.md](file://docs/design.md)
 - [plan.md](file://docs/plan.md)
+- [pyproject.toml](file://backend/pyproject.toml)
+- [package.json](file://frontend/package.json)
 - [main.py](file://backend/app/main.py)
 - [routes.py](file://backend/app/api/routes.py)
 - [runner.py](file://backend/app/runner.py)
 - [docx_parser.py](file://backend/app/parser/docx_parser.py)
-- [base.py](file://backend/app/checkers/base.py)
-- [pyproject.toml](file://backend/pyproject.toml)
+- [App.tsx](file://frontend/src/App.tsx)
+- [UploadPage.tsx](file://frontend/src/pages/UploadPage.tsx)
+- [ReportPage.tsx](file://frontend/src/pages/ReportPage.tsx)
+- [client.ts](file://frontend/src/api/client.ts)
+- [FileUpload.tsx](file://frontend/src/components/FileUpload.tsx)
 </cite>
 
 ## Table of Contents
@@ -25,311 +30,319 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
-Dissertation Checker is a web service designed to validate academic dissertations (.docx) against the GOST 7.32-2017 Kazakhstani university formatting standard. Its primary goal is to help university students and academic institutions ensure compliance with official formatting requirements through automated, detailed validation reports. The service accepts a DOCX document, parses it into a structured representation, runs a suite of independent checkers that enforce specific GOST rules, and returns a comprehensive report highlighting issues with severity levels, categories, precise locations, suggested fixes, and references to applicable GOST sections.
+Dissertation Checker is a web service designed to validate academic dissertations (.docx) against GOST 7.32-2017, the Kazakhstani university formatting standard. Its mission is to help students ensure their documents meet institutional formatting requirements quickly and reliably. By automating compliance checks, the platform saves time, reduces manual review effort, and minimizes formatting-related delays in the submission process.
 
 Target audience:
-- University students submitting dissertations who want to verify formatting compliance before submission
-- Academic institutions seeking a standardized, repeatable validation process for thesis formatting
-- Educational teams requiring an automated tool to reduce manual review effort
+- Students: Submit their dissertations for instant, rule-based feedback.
+- Universities: Institutions can integrate or recommend the service to support student submissions.
 
-Key benefits:
-- Automated compliance checking reduces manual verification workload
-- Detailed reporting with severity levels and actionable suggestions improves learning outcomes
-- Plugin-based checker architecture enables modular maintenance and future extensibility
-- Web-based interface supports easy adoption by students and staff
-
-Educational use case:
-The service supports the academic workflow by catching formatting issues early, ensuring documents meet institutional standards, and providing clear guidance for corrections. This helps maintain academic quality and consistency across submissions while saving time for both students and faculty.
+Core value proposition:
+- Automated compliance checking aligned with GOST 7.32-2017.
+- Fast turnaround for typical thesis volumes (< 30 seconds for ~100 pages).
+- Transparent reporting with severity levels, actionable suggestions, and rule references.
 
 ## Project Structure
-The project follows a layered architecture with a Python FastAPI backend, a plugin-based checker system, and a shared parsing layer. The backend exposes REST endpoints for document upload and report retrieval, orchestrates validation via a runner, and returns structured reports. The design document outlines the complete structure and data contracts.
+The project follows a full-stack architecture:
+- Backend: Python/FastAPI with a plugin-based checker framework and DOCX parsing.
+- Frontend: React 18 with TypeScript and Vite, providing a clean upload and report UI.
+- Shared contracts: Pydantic models and data structures define the API and internal data flow.
 
 ```mermaid
 graph TB
-subgraph "Backend"
-A["FastAPI App<br/>backend/app/main.py"]
-B["API Routes<br/>backend/app/api/routes.py"]
-C["Checker Runner<br/>backend/app/runner.py"]
-D["DOCX Parser<br/>backend/app/parser/docx_parser.py"]
-E["Base Checker Interface<br/>backend/app/checkers/base.py"]
+subgraph "Frontend (React 18)"
+UP["UploadPage.tsx"]
+RP["ReportPage.tsx"]
+APP["App.tsx"]
+AX["api/client.ts"]
+FU["components/FileUpload.tsx"]
 end
-subgraph "Checkers (Plugins)"
-S["StructureChecker"]
-F["FormattingChecker"]
-C1["CaptionChecker"]
-SP["SpacingChecker"]
-CI["CitationChecker"]
+subgraph "Backend (FastAPI)"
+MAIN["app/main.py"]
+ROUTES["app/api/routes.py"]
+RUNNER["app/runner.py"]
+PARSER["app/parser/docx_parser.py"]
 end
-subgraph "Contracts"
-M["Models (Issue, Report)<br/>backend/app/core/models.py"]
-P["ParsedDocument Structures<br/>backend/app/parser/structures.py"]
-end
-A --> B
-B --> D
-B --> C
-C --> S
-C --> F
-C --> C1
-C --> SP
-C --> CI
-D --> P
-S --> E
-F --> E
-C1 --> E
-SP --> E
-CI --> E
-B --> M
-C --> M
+APP --> UP
+APP --> RP
+UP --> AX
+RP --> AX
+AX --> MAIN
+MAIN --> ROUTES
+ROUTES --> PARSER
+ROUTES --> RUNNER
 ```
 
 **Diagram sources**
 - [main.py:1-20](file://backend/app/main.py#L1-L20)
-- [routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
+- [routes.py:1-75](file://backend/app/api/routes.py#L1-L75)
 - [runner.py:1-25](file://backend/app/runner.py#L1-L25)
-- [docx_parser.py:1-238](file://backend/app/parser/docx_parser.py#L1-L238)
-- [base.py:1-17](file://backend/app/checkers/base.py#L1-L17)
+- [docx_parser.py:1-8](file://backend/app/parser/docx_parser.py#L1-L8)
+- [App.tsx:1-16](file://frontend/src/App.tsx#L1-L16)
+- [UploadPage.tsx:1-62](file://frontend/src/pages/UploadPage.tsx#L1-L62)
+- [ReportPage.tsx:1-37](file://frontend/src/pages/ReportPage.tsx#L1-L37)
+- [client.ts:1-50](file://frontend/src/api/client.ts#L1-L50)
+- [FileUpload.tsx:1-48](file://frontend/src/components/FileUpload.tsx#L1-L48)
 
 **Section sources**
 - [README.md:160-195](file://README.md#L160-L195)
 - [design.md:28-79](file://docs/design.md#L28-L79)
 
 ## Core Components
-- FastAPI Application Entry: Initializes the backend server, applies CORS middleware, and mounts API routes under /api.
-- API Routes: Provides health check, document upload endpoint, and report retrieval endpoints. Handles file validation, temporary file management, and orchestrates parsing and checking.
-- DOCX Parser: Converts a .docx file into a structured ParsedDocument containing paragraphs, sections, figures, tables, references, metadata, and document properties.
-- Checker Runner: Aggregates issues from all registered checkers and produces a unified Report.
-- Base Checker Interface: Defines the contract that all individual checkers implement, enabling a plugin-based architecture.
-- Shared Contracts: Define Issue, Report, ParsedDocument, and related structures used across the system.
+- Backend application entry and middleware configuration.
+- API routes for health checks, document upload, and report retrieval.
+- Checker orchestration that runs multiple independent checkers.
+- DOCX parsing layer extracting structured data for validation.
+- Frontend application routing between upload and report views.
+- API client integrating with the backend REST endpoints.
+- File upload component enabling drag-and-drop selection of .docx files.
 
-These components work together to transform a raw DOCX upload into a detailed compliance report aligned with GOST 7.32-2017 requirements.
+Key implementation references:
+- Backend app initialization and CORS: [main.py:1-20](file://backend/app/main.py#L1-L20)
+- API endpoints and temporary file handling: [routes.py:1-75](file://backend/app/api/routes.py#L1-L75)
+- Checker orchestration: [runner.py:1-25](file://backend/app/runner.py#L1-L25)
+- DOCX parsing stub: [docx_parser.py:1-8](file://backend/app/parser/docx_parser.py#L1-L8)
+- Frontend app routing: [App.tsx:1-16](file://frontend/src/App.tsx#L1-L16)
+- Upload page and form handling: [UploadPage.tsx:1-62](file://frontend/src/pages/UploadPage.tsx#L1-L62)
+- Report page and JSON download: [ReportPage.tsx:1-37](file://frontend/src/pages/ReportPage.tsx#L1-L37)
+- API client and models: [client.ts:1-50](file://frontend/src/api/client.ts#L1-L50)
+- File upload component: [FileUpload.tsx:1-48](file://frontend/src/components/FileUpload.tsx#L1-L48)
 
 **Section sources**
 - [main.py:1-20](file://backend/app/main.py#L1-L20)
-- [routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
+- [routes.py:1-75](file://backend/app/api/routes.py#L1-L75)
 - [runner.py:1-25](file://backend/app/runner.py#L1-L25)
-- [docx_parser.py:1-238](file://backend/app/parser/docx_parser.py#L1-L238)
-- [base.py:1-17](file://backend/app/checkers/base.py#L1-L17)
-- [design.md:95-186](file://docs/design.md#L95-L186)
+- [docx_parser.py:1-8](file://backend/app/parser/docx_parser.py#L1-L8)
+- [App.tsx:1-16](file://frontend/src/App.tsx#L1-L16)
+- [UploadPage.tsx:1-62](file://frontend/src/pages/UploadPage.tsx#L1-L62)
+- [ReportPage.tsx:1-37](file://frontend/src/pages/ReportPage.tsx#L1-L37)
+- [client.ts:1-50](file://frontend/src/api/client.ts#L1-L50)
+- [FileUpload.tsx:1-48](file://frontend/src/components/FileUpload.tsx#L1-L48)
 
 ## Architecture Overview
-The system employs a plugin-based checker architecture. The FastAPI backend exposes REST endpoints, the DOCX parser extracts a structured representation, and the runner coordinates multiple independent checkers. Each checker implements a common interface and returns a list of issues. The runner aggregates these issues into a single Report, which is returned to the client.
-
-```mermaid
-sequenceDiagram
-participant U as "User"
-participant FE as "Frontend (React)"
-participant API as "FastAPI Backend"
-participant PARSER as "DOCX Parser"
-participant RUNNER as "Checker Runner"
-participant CHECKERS as "Checkers (Structure/Formatting/Captions/Spacing/Citations)"
-U->>FE : "Upload .docx"
-FE->>API : "POST /api/check (multipart/form-data)"
-API->>API : "Validate file type and size"
-API->>PARSER : "parse_docx(temp_path, doc_type)"
-PARSER-->>API : "ParsedDocument"
-API->>RUNNER : "create_runner()"
-RUNNER->>CHECKERS : "register(checker) x5"
-API->>RUNNER : "run(document, filename)"
-RUNNER->>CHECKERS : "check(document) for each checker"
-CHECKERS-->>RUNNER : "list[Issue]"
-RUNNER-->>API : "Report"
-API-->>FE : "Report JSON"
-FE-->>U : "Render compliance report"
-```
-
-**Diagram sources**
-- [routes.py:35-66](file://backend/app/api/routes.py#L35-L66)
-- [docx_parser.py:161-238](file://backend/app/parser/docx_parser.py#L161-L238)
-- [runner.py:15-25](file://backend/app/runner.py#L15-L25)
-- [base.py:9-17](file://backend/app/checkers/base.py#L9-L17)
-
-## Detailed Component Analysis
-
-### FastAPI Backend
-The backend initializes the FastAPI application, configures CORS for cross-origin requests, and includes the API router under /api. It serves as the central entry point for all HTTP interactions.
-
-```mermaid
-flowchart TD
-Start(["App Initialization"]) --> CreateApp["Create FastAPI app with title/version"]
-CreateApp --> AddCORS["Add CORSMiddleware"]
-AddCORS --> IncludeRouter["Include router at /api prefix"]
-IncludeRouter --> Ready(["Ready for requests"])
-```
-
-**Diagram sources**
-- [main.py:9-19](file://backend/app/main.py#L9-L19)
-
-**Section sources**
-- [main.py:1-20](file://backend/app/main.py#L1-L20)
-
-### API Routes
-The routes module defines:
-- Health check endpoint for service monitoring
-- Document validation endpoint that accepts .docx uploads, validates size and type, writes to a temporary file, parses the document, runs all checkers, and returns a structured report
-- Automatic cleanup of temporary files
-
-```mermaid
-sequenceDiagram
-participant Client as "Client"
-participant Router as "API Router"
-participant FS as "Filesystem"
-participant Parser as "DOCX Parser"
-participant Runner as "Checker Runner"
-Client->>Router : "POST /api/check (file, doc_type)"
-Router->>Router : "Validate file extension and size"
-Router->>FS : "Write to temporary .docx file"
-Router->>Parser : "parse_docx(temp_path, doc_type)"
-Parser-->>Router : "ParsedDocument"
-Router->>Runner : "create_runner().run(document, filename)"
-Runner-->>Router : "Report"
-Router->>FS : "Delete temporary file"
-Router-->>Client : "Report JSON"
-```
-
-**Diagram sources**
-- [routes.py:35-66](file://backend/app/api/routes.py#L35-L66)
-
-**Section sources**
-- [routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-
-### DOCX Parser
-The parser converts a .docx file into a structured ParsedDocument, extracting:
-- Paragraphs with style, alignment, font, spacing, and page break information
-- Sections derived from top-level headings
-- Figures and tables with numbering and caption positions
-- References identified after recognized headings
-- Document properties (margins, page dimensions, default font)
-- Estimated page counts
-
-```mermaid
-flowchart TD
-LoadDoc["Load .docx Document"] --> IteratePara["Iterate Paragraphs"]
-IteratePara --> ExtractStyle["Extract style, alignment, font info"]
-IteratePara --> DetectBreaks["Detect page breaks"]
-IteratePara --> BuildSections["Build sections from headings"]
-IteratePara --> DetectFigures["Detect figures by pattern"]
-IteratePara --> DetectTables["Detect tables by pattern"]
-IteratePara --> DetectRefs["Detect references after headings"]
-IteratePara --> ExtractProps["Extract document properties"]
-IteratePara --> EstimatePages["Estimate page count"]
-BuildSections --> Assemble["Assemble ParsedDocument"]
-DetectFigures --> Assemble
-DetectTables --> Assemble
-DetectRefs --> Assemble
-ExtractProps --> Assemble
-EstimatePages --> Assemble
-Assemble --> Done(["ParsedDocument"])
-```
-
-**Diagram sources**
-- [docx_parser.py:161-238](file://backend/app/parser/docx_parser.py#L161-L238)
-
-**Section sources**
-- [docx_parser.py:1-238](file://backend/app/parser/docx_parser.py#L1-L238)
-
-### Checker Runner
-The runner maintains a registry of checkers and executes them sequentially against the parsed document. It aggregates all issues into a single Report, computing totals and counts by severity and category.
-
-```mermaid
-classDiagram
-class CheckerRunner {
--_checkers : list[BaseChecker]
-+register(checker : BaseChecker) void
-+run(document : ParsedDocument, filename : str) Report
-}
-class BaseChecker {
-<<abstract>>
-+name : str
-+description : str
-+check(document : ParsedDocument) list[Issue]
-}
-CheckerRunner --> BaseChecker : "invokes"
-```
-
-**Diagram sources**
-- [runner.py:8-25](file://backend/app/runner.py#L8-L25)
-- [base.py:9-17](file://backend/app/checkers/base.py#L9-L17)
-
-**Section sources**
-- [runner.py:1-25](file://backend/app/runner.py#L1-L25)
-- [base.py:1-17](file://backend/app/checkers/base.py#L1-L17)
-
-### Shared Contracts
-The system defines reusable data contracts:
-- Issue: encapsulates severity, category, checker name, location, message, suggestion, and rule reference
-- IssueLocation: identifies paragraph index, page number, section name, and context text
-- Report: aggregates totals, counts, and the list of issues
-- ParsedDocument and related structures: define the parsed representation of the document
-
-These contracts ensure consistent data exchange between components and enable clear reporting.
-
-**Section sources**
-- [design.md:112-166](file://docs/design.md#L112-L166)
-
-## Dependency Analysis
-The backend leverages FastAPI for the web framework, python-docx for DOCX parsing, and Pydantic for request/response modeling. The project structure and design document outline the relationships among modules and the plugin-based checker system.
+The system uses a plugin-based checker architecture:
+- A runner aggregates multiple checkers (structure, formatting, captions, spacing, citations).
+- The DOCX parser converts .docx content into a structured model consumed by checkers.
+- The FastAPI backend exposes REST endpoints for health checks, document validation, and report retrieval.
+- The React frontend provides a simple UI for uploading documents and viewing reports.
 
 ```mermaid
 graph TB
-subgraph "Dependencies"
-FA["FastAPI"]
-UV["Uvicorn"]
-PM["python-multipart"]
-PD["python-docx"]
-PY["Pydantic"]
-PS["pydantic-settings"]
+U["User"]
+FE["Frontend (React)"]
+BE["Backend (FastAPI)"]
+ORCH["CheckerRunner"]
+CK1["StructureChecker"]
+CK2["FormattingChecker"]
+CK3["CaptionChecker"]
+CK4["SpacingChecker"]
+CK5["CitationChecker"]
+PARSE["DOCX Parser"]
+STORE["Temporary Storage"]
+U --> FE
+FE --> BE
+BE --> PARSE
+PARSE --> ORCH
+ORCH --> CK1
+ORCH --> CK2
+ORCH --> CK3
+ORCH --> CK4
+ORCH --> CK5
+BE --> STORE
+```
+
+**Diagram sources**
+- [routes.py:416-484](file://backend/app/api/routes.py#L416-L484)
+- [runner.py:363-390](file://backend/app/runner.py#L363-L390)
+- [docx_parser.py:5-7](file://backend/app/parser/docx_parser.py#L5-L7)
+- [client.ts:33-49](file://frontend/src/api/client.ts#L33-L49)
+
+**Section sources**
+- [design.md:14-94](file://docs/design.md#L14-L94)
+- [routes.py:416-484](file://backend/app/api/routes.py#L416-L484)
+- [runner.py:363-390](file://backend/app/runner.py#L363-L390)
+
+## Detailed Component Analysis
+
+### Backend Application Entry
+The FastAPI application initializes middleware and registers API routes under a /api prefix. It reads configuration for CORS origins and application name.
+
+```mermaid
+sequenceDiagram
+participant Client as "Frontend"
+participant App as "FastAPI App"
+participant Router as "Routes"
+participant Parser as "DOCX Parser"
+participant Runner as "CheckerRunner"
+Client->>App : GET /api/health
+App->>Router : Dispatch
+Router-->>Client : {"status" : "ok"}
+Client->>App : POST /api/check (multipart/form-data)
+App->>App : Validate file type and size
+App->>Parser : parse_docx(temp_path, doc_type)
+Parser-->>App : ParsedDocument
+App->>Runner : run(parsed_doc, filename)
+Runner-->>App : Report
+App-->>Client : Report JSON
+```
+
+**Diagram sources**
+- [main.py:1-20](file://backend/app/main.py#L1-L20)
+- [routes.py:36-75](file://backend/app/api/routes.py#L36-L75)
+- [runner.py:15-24](file://backend/app/runner.py#L15-L24)
+- [docx_parser.py:5-7](file://backend/app/parser/docx_parser.py#L5-L7)
+
+**Section sources**
+- [main.py:1-20](file://backend/app/main.py#L1-L20)
+- [routes.py:36-75](file://backend/app/api/routes.py#L36-L75)
+
+### Frontend Application Flow
+The React application toggles between upload and report views. Users select a .docx file via drag-and-drop, choose document type, and submit for validation. On success, the report is rendered with summary statistics and a filterable issue list.
+
+```mermaid
+flowchart TD
+Start(["Open App"]) --> Upload["UploadPage"]
+Upload --> Select["Select .docx via FileUpload"]
+Select --> ChooseType["Choose Document Type"]
+ChooseType --> Submit["Click Check Dissertation"]
+Submit --> CallAPI["Call API client to POST /api/check"]
+CallAPI --> RenderReport["Navigate to ReportPage"]
+RenderReport --> Summary["Show Summary Dashboard"]
+RenderReport --> Issues["Show Filterable Issue List"]
+Issues --> Actions["Download JSON or Check Another"]
+```
+
+**Diagram sources**
+- [App.tsx:6-13](file://frontend/src/App.tsx#L6-L13)
+- [UploadPage.tsx:9-27](file://frontend/src/pages/UploadPage.tsx#L9-L27)
+- [ReportPage.tsx:10-33](file://frontend/src/pages/ReportPage.tsx#L10-L33)
+- [client.ts:33-49](file://frontend/src/api/client.ts#L33-L49)
+- [FileUpload.tsx:9-23](file://frontend/src/components/FileUpload.tsx#L9-L23)
+
+**Section sources**
+- [App.tsx:1-16](file://frontend/src/App.tsx#L1-L16)
+- [UploadPage.tsx:1-62](file://frontend/src/pages/UploadPage.tsx#L1-L62)
+- [ReportPage.tsx:1-37](file://frontend/src/pages/ReportPage.tsx#L1-L37)
+- [client.ts:1-50](file://frontend/src/api/client.ts#L1-L50)
+- [FileUpload.tsx:1-48](file://frontend/src/components/FileUpload.tsx#L1-L48)
+
+### Data Models and Contracts
+Shared models define the internal and API contracts for issues, reports, parsed documents, and locations. These enable consistent communication between frontend and backend.
+
+```mermaid
+classDiagram
+class IssueLocation {
++int paragraph_index
++int page_number
++string section_name
++string context_text
+}
+class Issue {
++string severity
++string category
++string checker
++IssueLocation location
++string message
++string suggestion
++string rule_ref
+}
+class Report {
++string id
++string filename
++datetime checked_at
++string doc_type
++int total_issues
++dict issues_by_severity
++dict issues_by_category
++Issue[] issues
+}
+class ParsedDocument {
++string doc_type
++ParsedParagraph[] paragraphs
++DocumentSection[] sections
++Figure[] figures
++Table[] tables
++Reference[] references
++DocumentMetadata metadata
++int page_count
++int page_count_body
++DocProperties properties
+}
+Issue --> IssueLocation : "has"
+Report --> Issue : "contains"
+ParsedDocument --> Issue : "validated by checkers"
+```
+
+**Diagram sources**
+- [models.py:9-57](file://backend/app/core/models.py#L9-L57)
+- [design.md:112-166](file://docs/design.md#L112-L166)
+
+**Section sources**
+- [models.py:1-58](file://backend/app/core/models.py#L1-L58)
+- [design.md:112-166](file://docs/design.md#L112-L166)
+
+## Dependency Analysis
+Technology stack and runtime dependencies:
+- Backend: Python 3.11+, FastAPI, python-docx, Pydantic, pydantic-settings, uvicorn.
+- Frontend: React 18, Vite, TypeScript, Axios, react-dropzone.
+- Development: pytest, ruff, ESLint, Docker and docker-compose for containerization.
+
+```mermaid
+graph LR
+subgraph "Backend Dependencies"
+F["FastAPI"]
+U["Uvicorn"]
+D["python-docx"]
+M["python-multipart"]
+P["Pydantic"]
+S["pydantic-settings"]
 end
-subgraph "Backend Modules"
-MAIN["main.py"]
-ROUTES["routes.py"]
-RUN["runner.py"]
-PARSE["docx_parser.py"]
-BASE["checkers/base.py"]
+subgraph "Frontend Dependencies"
+R["React 18"]
+V["Vite"]
+T["TypeScript"]
+A["Axios"]
+RD["react-dropzone"]
 end
-MAIN --> ROUTES
-ROUTES --> PARSE
-ROUTES --> RUN
-RUN --> BASE
-PARSE --> PD
-MAIN --> FA
-FA --> UV
-ROUTES --> PM
-MAIN --> PS
-ROUTES --> PY
+F --> P
+F --> S
+F --> U
+F --> M
+D --> F
+R --> A
+R --> RD
+V --> R
+T --> V
 ```
 
 **Diagram sources**
 - [pyproject.toml:5-12](file://backend/pyproject.toml#L5-L12)
-- [main.py:3-19](file://backend/app/main.py#L3-L19)
-- [routes.py:3-12](file://backend/app/api/routes.py#L3-L12)
-- [runner.py:3-5](file://backend/app/runner.py#L3-L5)
-- [docx_parser.py:3-10](file://backend/app/parser/docx_parser.py#L3-L10)
-- [base.py:5-6](file://backend/app/checkers/base.py#L5-L6)
+- [package.json:12-29](file://frontend/package.json#L12-L29)
 
 **Section sources**
 - [pyproject.toml:1-29](file://backend/pyproject.toml#L1-L29)
-- [design.md:18-27](file://docs/design.md#L18-L27)
+- [package.json:1-32](file://frontend/package.json#L1-L32)
 
 ## Performance Considerations
-- File size limits and temporary file handling ensure safe processing and prevent resource exhaustion
-- The runner executes checkers sequentially; future enhancements could explore parallelization for improved throughput
-- Parsing and checking performance scales with document size; the design specifies processing time targets for typical document sizes
+- File size limit: 50 MB to balance validation accuracy with processing speed.
+- Target processing time: < 30 seconds for ~100 pages.
+- Temporary file handling: Uploaded files are stored temporarily during processing and removed afterward.
+- CORS configuration: Allows frontend origin to enable seamless cross-origin requests.
+- Rate limiting: Recommended at 10 requests/minute per IP to prevent abuse.
+
+[No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
-Common issues and their likely causes:
-- Invalid file format errors occur when the uploaded file is not a .docx
-- File too large errors indicate the uploaded file exceeds the configured maximum size
-- Parsing errors during document processing suggest issues with the .docx content or structure
-- CORS errors can arise from frontend origin mismatches; ensure origins are configured correctly
-
-Operational tips:
-- Verify the health endpoint to confirm service availability
-- Confirm that the DOCX file meets basic structural expectations for headings, paragraphs, and sections
-- Review the report for severity and category distributions to prioritize corrections
+Common issues and resolutions:
+- Invalid file format: Ensure the uploaded file is a .docx document; the backend rejects other formats.
+- File too large: Keep files under the configured maximum size (default 50 MB).
+- Parsing errors: Verify the .docx is not corrupted and contains readable content.
+- Network/API errors: Confirm the backend is running and reachable at the configured API URL.
+- CORS errors: Ensure the frontend origin matches the configured CORS origins.
 
 **Section sources**
-- [routes.py:40-62](file://backend/app/api/routes.py#L40-L62)
-- [main.py:11-17](file://backend/app/main.py#L11-L17)
+- [routes.py:41-50](file://backend/app/api/routes.py#L41-L50)
+- [client.ts:3-4](file://frontend/src/api/client.ts#L3-L4)
+- [config.py:6-16](file://backend/app/core/config.py#L6-L16)
 
 ## Conclusion
-Dissertation Checker provides a focused, automated solution for validating academic documents against GOST 7.32-2017 formatting standards. Its plugin-based architecture, robust parsing layer, and clear reporting model make it suitable for educational environments where consistent, repeatable validation is essential. By integrating seamlessly with a web-based workflow, the service supports both individual student compliance and institutional quality assurance processes.
+Dissertation Checker delivers a focused, automated solution for validating Kazakhstani university dissertations against GOST 7.32-2017. Its plugin-based architecture, robust DOCX parsing, and intuitive React frontend combine to provide a scalable and maintainable platform. The documented development methodology and team assignments establish a clear path for contributors to implement and extend the system effectively.

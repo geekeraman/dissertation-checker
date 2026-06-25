@@ -1,0 +1,1 @@
+Use React + Vite + TypeScript for the frontend — Scaffold the frontend using `npm create vite@latest` with React and TypeScript.

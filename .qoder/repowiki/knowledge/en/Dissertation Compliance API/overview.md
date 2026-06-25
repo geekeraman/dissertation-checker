@@ -1,0 +1,1 @@
+Orchestrates DOCX parsing and modular GOST compliance checks via a FastAPI endpoint, aggregating issues into a unified report.

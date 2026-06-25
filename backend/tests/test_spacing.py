@@ -36,15 +36,6 @@ class TestSpacingChecker:
         spaces = [i for i in issues if "consecutive" in i.message.lower() or "multiple" in i.message.lower()]
         assert len(spaces) > 0
 
-    def test_wrong_line_spacing(self):
-        paragraphs = [
-            make_paragraph("Text", line_spacing=2.0, paragraph_index=0),
-        ]
-        doc = make_document(paragraphs=paragraphs)
-        issues = self.checker.check(doc)
-        spacing = [i for i in issues if "line spacing" in i.message.lower()]
-        assert len(spacing) > 0
-
     def test_empty_paragraphs_between_sections(self):
         paragraphs = [
             make_paragraph("Section text", paragraph_index=0),

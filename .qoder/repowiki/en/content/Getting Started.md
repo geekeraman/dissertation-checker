@@ -3,360 +3,230 @@
 <cite>
 **Referenced Files in This Document**
 - [README.md](file://README.md)
-- [pyproject.toml](file://backend/pyproject.toml)
-- [main.py](file://backend/app/main.py)
-- [config.py](file://backend/app/core/config.py)
-- [routes.py](file://backend/app/api/routes.py)
-- [schemas.py](file://backend/app/api/schemas.py)
-- [runner.py](file://backend/app/runner.py)
-- [base.py](file://backend/app/checkers/base.py)
-- [docx_parser.py](file://backend/app/parser/docx_parser.py)
 - [design.md](file://docs/design.md)
 - [plan.md](file://docs/plan.md)
+- [pyproject.toml](file://backend/pyproject.toml)
+- [package.json](file://frontend/package.json)
+- [config.py](file://backend/app/core/config.py)
+- [routes.py](file://backend/app/api/routes.py)
+- [main.py](file://backend/app/main.py)
+- [client.ts](file://frontend/src/api/client.ts)
+- [vite.config.ts](file://frontend/vite.config.ts)
+- [UploadPage.tsx](file://frontend/src/pages/UploadPage.tsx)
+- [App.tsx](file://frontend/src/App.tsx)
 </cite>
 
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Project Structure](#project-structure)
-3. [Core Components](#core-components)
-4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+2. [Prerequisites](#prerequisites)
+3. [Installation](#installation)
+4. [Quick Start](#quick-start)
+5. [Development Workflow](#development-workflow)
+6. [Architecture Overview](#architecture-overview)
+7. [Component Walkthrough](#component-walkthrough)
+8. [Troubleshooting](#troubleshooting)
+9. [Next Steps](#next-steps)
 
 ## Introduction
-This guide helps you set up and run the Dissertation Checker project locally. It covers prerequisites, step-by-step installation for backend and frontend, environment setup with virtual environments, initial configuration, development workflow, running the application, accessing API endpoints, and troubleshooting.
+This guide helps you set up and run the Dissertation Checker project locally. It covers prerequisites, installation for backend and frontend, local development workflow, and quick start steps to validate a document using the web interface.
 
-## Project Structure
-The project is organized into:
-- backend: Python FastAPI application with API endpoints, core models, parsers, checkers, and tests
-- docs: Design specification and implementation plan
-- Root README with quick start, team assignments, Git workflow, daily standup, and golden rules
+## Prerequisites
+- Python 3.11 or newer
+- Node.js 18 or newer
+- Git
+- A modern browser
 
-```mermaid
-graph TB
-A["Root README.md<br/>Quick start, workflow, rules"] --> B["backend/"]
-B --> C["app/"]
-C --> D["api/ (routes.py, schemas.py)"]
-C --> E["core/ (config.py, models.py)"]
-C --> F["parser/ (docx_parser.py, structures.py)"]
-C --> G["checkers/ (base.py, *.py)"]
-C --> H["runner.py"]
-C --> I["main.py"]
-B --> J["pyproject.toml"]
-K["docs/"] --> L["design.md"]
-K --> M["plan.md"]
-```
-
-**Diagram sources**
-- [README.md:169-195](file://README.md#L169-L195)
-- [main.py:1-20](file://backend/app/main.py#L1-L20)
-- [routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-- [schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
-- [config.py:1-17](file://backend/app/core/config.py#L1-L17)
-- [runner.py:1-25](file://backend/app/runner.py#L1-L25)
-- [base.py:1-17](file://backend/app/checkers/base.py#L1-L17)
-- [docx_parser.py:1-238](file://backend/app/parser/docx_parser.py#L1-L238)
-- [pyproject.toml:1-29](file://backend/pyproject.toml#L1-L29)
-- [design.md:28-79](file://docs/design.md#L28-L79)
+These versions are required by the project’s technology stack and configuration.
 
 **Section sources**
-- [README.md:169-195](file://README.md#L169-L195)
-- [design.md:28-79](file://docs/design.md#L28-L79)
+- [README.md:25-28](file://README.md#L25-L28)
+- [pyproject.toml:4](file://backend/pyproject.toml#L4)
+- [package.json:12-17](file://frontend/package.json#L12-L17)
 
-## Core Components
-- FastAPI application entry and CORS middleware
-- API routes for health, upload, and report retrieval
-- Pydantic schemas for request/response contracts
-- Configuration settings (app name, CORS origins, upload size limits)
-- Checker orchestration via a runner that aggregates issues
-- Base checker interface for extensibility
-- DOCX parser that extracts structured data from .docx
+## Installation
 
-Key implementation references:
-- Application entry and router inclusion: [main.py:1-20](file://backend/app/main.py#L1-L20)
-- API routes and endpoint logic: [routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-- API schemas: [schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
-- Settings and CORS: [config.py:1-17](file://backend/app/core/config.py#L1-L17)
-- Checker runner: [runner.py:1-25](file://backend/app/runner.py#L1-L25)
-- Base checker interface: [base.py:1-17](file://backend/app/checkers/base.py#L1-L17)
-- DOCX parser: [docx_parser.py:1-238](file://backend/app/parser/docx_parser.py#L1-L238)
+### Backend Setup
+1. Change into the backend directory and create a virtual environment:
+   - Linux/macOS: python3 -m venv .venv
+   - Windows: python -m venv .venv
+2. Activate the virtual environment:
+   - Linux/macOS: source .venv/bin/activate
+   - Windows: .venv\Scripts\activate
+3. Install the backend package in development mode:
+   - pip install -e ".[dev]"
+
+Verification:
+- From the backend directory, run: python -c "from app.main import app; print('OK')"
+- Expected output: OK
+
+**Section sources**
+- [README.md:29-34](file://README.md#L29-L34)
+- [pyproject.toml:14-29](file://backend/pyproject.toml#L14-L29)
+
+### Frontend Setup
+1. Change into the frontend directory.
+2. Install dependencies:
+   - npm install
+
+Verification:
+- The frontend uses Vite and TypeScript. Running the dev server should succeed after dependencies install.
+
+**Section sources**
+- [README.md:35-37](file://README.md#L35-L37)
+- [package.json:6-11](file://frontend/package.json#L6-L11)
+
+## Quick Start
+
+### Run Locally
+1. Start the backend server:
+   - From the backend directory, run uvicorn with the FastAPI app entrypoint.
+   - The server listens on the port configured by the app (see backend main module).
+2. Start the frontend:
+   - From the frontend directory, run the Vite dev server.
+   - The frontend expects the backend API at http://localhost:8000/api by default.
+
+Access the web interface:
+- Open your browser to the frontend URL shown by the Vite dev server (commonly http://localhost:5173).
+- Select a document type, choose a .docx file, and click “Check Dissertation”.
+
+Expected behavior:
+- The backend validates the uploaded .docx against GOST 7.32-2017 rules and returns a report.
+- The frontend displays a summary and detailed issues.
 
 **Section sources**
 - [main.py:1-20](file://backend/app/main.py#L1-L20)
-- [routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-- [schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
-- [config.py:1-17](file://backend/app/core/config.py#L1-L17)
-- [runner.py:1-25](file://backend/app/runner.py#L1-L25)
-- [base.py:1-17](file://backend/app/checkers/base.py#L1-L17)
-- [docx_parser.py:1-238](file://backend/app/parser/docx_parser.py#L1-L238)
+- [routes.py:31-75](file://backend/app/api/routes.py#L31-L75)
+- [client.ts:3](file://frontend/src/api/client.ts#L3)
+- [vite.config.ts:1-8](file://frontend/vite.config.ts#L1-L8)
+- [UploadPage.tsx:30-61](file://frontend/src/pages/UploadPage.tsx#L30-L61)
+
+## Development Workflow
+
+### Git Branching Strategy
+- Create your own feature branch after Task 1 is merged.
+- Commit frequently and push daily.
+- Create a Pull Request when ready for review.
+
+Branch naming examples:
+- dev-a/structure-formatting
+- dev-b/captions-spacing-frontend
+- dev-c/citations-docker
+
+**Section sources**
+- [README.md:122-139](file://README.md#L122-L139)
+
+### Daily Standup Template
+Post this template in your team chat each day:
+- Finished: [Task name]
+- Working on: [Task name]
+- Blocked: [Nothing / describe problem]
+
+**Section sources**
+- [README.md:141-150](file://README.md#L141-L150)
+
+### Golden Rules
+- Never edit another person’s files without permission.
+- Push to GitHub every day.
+- Run tests before committing.
+- If stuck for 30+ minutes, ask the team or use Qoder for help.
+- Focus on one task at a time.
+
+**Section sources**
+- [README.md:152-158](file://README.md#L152-L158)
 
 ## Architecture Overview
-The backend follows a plugin-based checker architecture:
-- API receives a .docx upload
-- Parser converts the document into a structured model
-- Runner executes registered checkers
-- Aggregated report is returned as JSON
 
 ```mermaid
 graph TB
-Client["Client Browser/App"] --> API["FastAPI Routes<br/>routes.py"]
-API --> Parser["DOCX Parser<br/>docx_parser.py"]
-API --> Runner["Checker Runner<br/>runner.py"]
-Runner --> Checkers["Checkers (5 plugins)<br/>structure/formatting/captions/spacing/citations"]
-Checkers --> Models["Core Models<br/>Issue, Report, ParsedDocument"]
-API --> Schemas["Pydantic Schemas<br/>schemas.py"]
-API --> Config["Settings & CORS<br/>config.py"]
-API --> Main["App Entry<br/>main.py"]
+Browser["Browser<br/>Frontend (React)"] --> FE["Vite Dev Server<br/>frontend/"]
+FE --> API["FastAPI App<br/>backend/app/main.py"]
+API --> Routes["Routes<br/>backend/app/api/routes.py"]
+Routes --> Runner["CheckerRunner<br/>orchestrates checkers"]
+Runner --> Structure["StructureChecker"]
+Runner --> Formatting["FormattingChecker"]
+Runner --> Captions["CaptionChecker"]
+Runner --> Spacing["SpacingChecker"]
+Runner --> Citations["CitationChecker"]
+Routes --> Parser["DOCX Parser<br/>backend/app/parser/docx_parser.py"]
+Parser --> Models["ParsedDocument<br/>backend/app/parser/structures.py"]
 ```
 
 **Diagram sources**
-- [routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-- [docx_parser.py:1-238](file://backend/app/parser/docx_parser.py#L1-L238)
-- [runner.py:1-25](file://backend/app/runner.py#L1-L25)
-- [base.py:1-17](file://backend/app/checkers/base.py#L1-L17)
-- [schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
-- [config.py:1-17](file://backend/app/core/config.py#L1-L17)
 - [main.py:1-20](file://backend/app/main.py#L1-L20)
+- [routes.py:21-28](file://backend/app/api/routes.py#L21-L28)
+- [routes.py:58-62](file://backend/app/api/routes.py#L58-L62)
+- [config.py:6-16](file://backend/app/core/config.py#L6-L16)
 
-## Detailed Component Analysis
+## Component Walkthrough
 
-### Backend Setup and Environment
-- Prerequisites
-  - Python 3.11+
-  - Node.js 18+ (for frontend)
-  - pip and npm
-- Virtual environment
-  - Create and activate a Python virtual environment in the backend directory
-  - Install editable development dependencies
-- Initial configuration
-  - Settings include app name, CORS origins, and max upload size
-  - Default frontend origin is configured for local development
-
-Step-by-step:
-1. Install Python 3.11+ and Node.js 18+
-2. Navigate to backend and create a virtual environment
-3. Activate the virtual environment
-4. Install dependencies with development extras
-5. Verify the application imports correctly
-
-Verification steps:
-- Confirm Python version meets requirement
-- Confirm Node.js version meets requirement
-- Confirm virtual environment activation
-- Confirm editable install succeeds
-- Run a basic import check
+### Backend Entry Point and CORS
+- The FastAPI app sets up CORS origins and mounts the API router under /api.
+- The default frontend origin is configured for local development.
 
 **Section sources**
-- [README.md:25-38](file://README.md#L25-L38)
-- [pyproject.toml:1-29](file://backend/pyproject.toml#L1-L29)
-- [config.py:1-17](file://backend/app/core/config.py#L1-L17)
-
-### Running the Application Locally
-- Backend server
-  - The FastAPI app defines CORS and mounts the API router under /api
-- Frontend
-  - The project includes a frontend directory and package manifest; run the frontend in a separate terminal as indicated in the quick start
-
-Local execution references:
-- Application entry and router mounting: [main.py:1-20](file://backend/app/main.py#L1-L20)
-- API router and endpoints: [routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-- Frontend setup command: [README.md:35-37](file://README.md#L35-L37)
-
-**Section sources**
-- [main.py:1-20](file://backend/app/main.py#L1-L20)
-- [routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-- [README.md:35-37](file://README.md#L35-L37)
+- [main.py:9-19](file://backend/app/main.py#L9-L19)
+- [config.py:9](file://backend/app/core/config.py#L9)
 
 ### API Endpoints
-- GET /api/health: Returns a simple health status
-- POST /api/check: Accepts a .docx file and optional document type form field, validates file type and size, parses the document, runs all checkers, and returns a structured report
+- GET /api/health: Returns a simple health status.
+- POST /api/check: Accepts a .docx file and optional doc_type, parses the document, runs all checkers, and returns a report.
+- GET /api/reports/{id}: Retrieves a previously generated report.
 
-Endpoint behavior references:
-- Health endpoint: [routes.py:30-32](file://backend/app/api/routes.py#L30-L32)
-- Document check endpoint: [routes.py:35-66](file://backend/app/api/routes.py#L35-L66)
-- Request/response schemas: [schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
-- Settings for upload size and CORS: [config.py:1-17](file://backend/app/core/config.py#L1-L17)
-
-```mermaid
-sequenceDiagram
-participant Client as "Client"
-participant API as "Routes<br/>routes.py"
-participant Parser as "Parser<br/>docx_parser.py"
-participant Runner as "Runner<br/>runner.py"
-participant Checkers as "Checkers<br/>base.py impls"
-Client->>API : "POST /api/check (multipart)"
-API->>API : "Validate file type and size"
-API->>Parser : "parse_docx(file_path, doc_type)"
-Parser-->>API : "ParsedDocument"
-API->>Runner : "create_runner() and run(document, filename)"
-Runner->>Checkers : "check(document) for each checker"
-Checkers-->>Runner : "list of Issues"
-Runner-->>API : "Report"
-API-->>Client : "Report JSON"
-```
-
-**Diagram sources**
-- [routes.py:35-66](file://backend/app/api/routes.py#L35-L66)
-- [docx_parser.py:161-238](file://backend/app/parser/docx_parser.py#L161-L238)
-- [runner.py:15-25](file://backend/app/runner.py#L15-L25)
-- [base.py:9-17](file://backend/app/checkers/base.py#L9-L17)
+Validation rules:
+- Only .docx files are accepted.
+- Enforces a maximum upload size via settings.
 
 **Section sources**
-- [routes.py:30-66](file://backend/app/api/routes.py#L30-L66)
-- [schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
-- [config.py:1-17](file://backend/app/core/config.py#L1-L17)
+- [routes.py:31-34](file://backend/app/api/routes.py#L31-L34)
+- [routes.py:36-62](file://backend/app/api/routes.py#L36-L62)
+- [routes.py:70-75](file://backend/app/api/routes.py#L70-L75)
+- [config.py:8](file://backend/app/core/config.py#L8)
 
-### Development Workflow
-- Git branching strategy
-  - Create feature branches prefixed with dev-a/, dev-b/, dev-c/ per developer
-  - Push branches and open pull requests after completing tasks
-  - Rebase or pull main after merging
-- Daily standup template
-  - Use the provided daily update format
-- Golden rules
-  - Respect file ownership, push daily, run tests before committing, ask for help when stuck, focus on one task at a time
-
-Workflow references:
-- Branch creation commands: [README.md:124-139](file://README.md#L124-L139)
-- Daily standup template: [README.md:141-150](file://README.md#L141-L150)
-- Golden rules: [README.md:152-158](file://README.md#L152-L158)
+### Frontend Pages and API Client
+- UploadPage collects a file and document type, then calls the API client to check the document.
+- The API client posts to /api/check and fetches reports from /api/reports/{id}.
+- The default API base URL is http://localhost:8000/api unless overridden by VITE_API_URL.
 
 **Section sources**
-- [README.md:122-158](file://README.md#L122-L158)
+- [UploadPage.tsx:9-27](file://frontend/src/pages/UploadPage.tsx#L9-L27)
+- [client.ts:33-49](file://frontend/src/api/client.ts#L33-L49)
+- [vite.config.ts:1-8](file://frontend/vite.config.ts#L1-L8)
 
-### Understanding the Project Structure
-- Backend modules
-  - app/api: API endpoints and schemas
-  - app/core: configuration and shared models
-  - app/parser: DOCX parsing utilities
-  - app/checkers: checker plugins and base interface
-  - app/runner.py: orchestrates checkers
-  - app/main.py: FastAPI application entry
-- Docs
-  - design.md: architecture, contracts, and checker specs
-  - plan.md: step-by-step tasks and implementation guidance
+## Troubleshooting
 
-Structure references:
-- Backend directory layout: [README.md:169-195](file://README.md#L169-L195)
-- Design spec structure: [design.md:28-79](file://docs/design.md#L28-L79)
-
-**Section sources**
-- [README.md:169-195](file://README.md#L169-L195)
-- [design.md:28-79](file://docs/design.md#L28-L79)
-
-## Dependency Analysis
-- Python dependencies declared in pyproject.toml include FastAPI, Uvicorn, python-multipart, python-docx, Pydantic, and Pydantic Settings
-- Optional development dependencies include pytest, pytest-asyncio, httpx, and ruff
-- The backend app imports FastAPI, CORSMiddleware, routes, and settings
-
-Dependency references:
-- Dependencies and dev extras: [pyproject.toml:1-29](file://backend/pyproject.toml#L1-L29)
-- Application imports: [main.py:1-20](file://backend/app/main.py#L1-L20)
-- Route imports: [routes.py:1-17](file://backend/app/api/routes.py#L1-L17)
-
-```mermaid
-graph TB
-P["pyproject.toml"] --> D1["FastAPI"]
-P --> D2["Uvicorn"]
-P --> D3["python-docx"]
-P --> D4["Pydantic"]
-P --> D5["Pydantic Settings"]
-P --> DEV1["pytest"]
-P --> DEV2["pytest-asyncio"]
-P --> DEV3["httpx"]
-P --> DEV4["ruff"]
-APP["main.py"] --> D1
-APP --> D2
-ROUTES["routes.py"] --> D3
-ROUTES --> D4
-ROUTES --> D5
-```
-
-**Diagram sources**
-- [pyproject.toml:1-29](file://backend/pyproject.toml#L1-L29)
-- [main.py:1-20](file://backend/app/main.py#L1-L20)
-- [routes.py:1-17](file://backend/app/api/routes.py#L1-L17)
+Common setup issues and fixes:
+- Python version too low
+  - Ensure Python 3.11+ is installed and selected by your shell.
+  - Reinstall Python or use a version manager if needed.
+- Node.js version too low
+  - Ensure Node.js 18+ is installed.
+  - Reinstall or use a version manager if needed.
+- Virtual environment activation fails
+  - Recreate the venv: python3 -m venv .venv
+  - Activate again using the appropriate command for your OS.
+- Backend import error
+  - Confirm you are inside the backend directory and ran the editable install with dev extras.
+  - Verify the import path: python -c "from app.main import app; print('OK')"
+- Frontend dependency failures
+  - Clear node_modules and reinstall: rm -rf node_modules && npm install
+- Port conflicts
+  - Backend default port is typically 8000; adjust if in use.
+  - Frontend default port is typically 5173; adjust if in use.
+- CORS errors in browser console
+  - Ensure the frontend origin matches the configured CORS origins in settings.
+- API URL mismatch
+  - Set VITE_API_URL to match your backend host/port if different from localhost:8000.
 
 **Section sources**
-- [pyproject.toml:1-29](file://backend/pyproject.toml#L1-L29)
-- [main.py:1-20](file://backend/app/main.py#L1-L20)
-- [routes.py:1-17](file://backend/app/api/routes.py#L1-L17)
+- [README.md:25-37](file://README.md#L25-L37)
+- [config.py:9](file://backend/app/core/config.py#L9)
+- [client.ts:3](file://frontend/src/api/client.ts#L3)
 
-## Performance Considerations
-- Max upload size is enforced to protect resources
-- Temporary file cleanup occurs after processing
-- Non-functional requirements specify processing time targets and privacy constraints
-
-References:
-- Upload size enforcement: [routes.py:44-49](file://backend/app/api/routes.py#L44-L49)
-- Temporary file deletion: [routes.py:63-65](file://backend/app/api/routes.py#L63-L65)
-- Non-functional requirements: [design.md:307-315](file://docs/design.md#L307-L315)
+## Next Steps
+- Explore the design specification to understand the plugin-based checker architecture and GOST rules.
+- Review the implementation plan to see how tasks are split across developers.
+- Run the existing tests to confirm your environment is working.
 
 **Section sources**
-- [routes.py:44-65](file://backend/app/api/routes.py#L44-L65)
-- [design.md:307-315](file://docs/design.md#L307-L315)
-
-## Troubleshooting Guide
-Common setup issues and resolutions:
-- Python version mismatch
-  - Ensure Python 3.11+ is installed and selected
-  - Verify by checking the Python version
-- Node.js version mismatch
-  - Ensure Node.js 18+ is installed and selected
-  - Verify by checking the Node.js version
-- Virtual environment activation
-  - Create a virtual environment in the backend directory
-  - Activate it before installing dependencies
-- Dependency installation failures
-  - Use editable install with development extras
-  - Confirm pyproject.toml dependencies are satisfied
-- CORS errors in browser
-  - Default frontend origin is configured for localhost:5173
-  - Adjust settings if using a different port
-- Upload size errors
-  - The API enforces a maximum upload size
-  - Reduce file size or adjust settings if appropriate
-- Parser errors
-  - The DOCX parser relies on python-docx
-  - Ensure the parser can read the .docx file and extract paragraphs, sections, figures, tables, and references
-
-Verification steps:
-- Confirm Python and Node.js versions meet requirements
-- Confirm virtual environment activation and editable install
-- Run a basic import check for the FastAPI app
-- Test the health endpoint
-- Upload a small .docx file and verify a report is returned
-
-**Section sources**
-- [README.md:25-38](file://README.md#L25-L38)
-- [pyproject.toml:1-29](file://backend/pyproject.toml#L1-L29)
-- [config.py:1-17](file://backend/app/core/config.py#L1-L17)
-- [routes.py:44-65](file://backend/app/api/routes.py#L44-L65)
-- [docx_parser.py:161-238](file://backend/app/parser/docx_parser.py#L161-L238)
-
-## Conclusion
-You now have the prerequisites, installation steps, environment setup, and development workflow to run the Dissertation Checker locally. Use the API endpoints to validate documents, adhere to the Git workflow and golden rules, and consult the troubleshooting guide for common issues.
-
-## Appendices
-
-### API Endpoint Definitions
-- GET /api/health
-  - Purpose: Health check
-  - Response: Status object
-- POST /api/check
-  - Purpose: Analyze a .docx document
-  - Request: multipart/form-data with file and doc_type
-  - Response: Report JSON with issues and summary statistics
-
-References:
-- Health endpoint: [routes.py:30-32](file://backend/app/api/routes.py#L30-L32)
-- Document check endpoint: [routes.py:35-66](file://backend/app/api/routes.py#L35-L66)
-- Schemas: [schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
-
-**Section sources**
-- [routes.py:30-66](file://backend/app/api/routes.py#L30-L66)
-- [schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
+- [design.md:1-324](file://docs/design.md#L1-L324)
+- [plan.md:1-122](file://docs/plan.md#L1-L122)

@@ -1,0 +1,3 @@
+- The `CheckerRunner` in `app/runner.py` implements a plugin-style architecture, registering concrete checkers (Structure, Formatting, Captions, Spacing, Citations) that all inherit from the `BaseChecker` ABC in `app/checkers/base.py`.
+- The API route in `app/api/routes.py` acts as the entry point, coordinating the lifecycle: it accepts uploads, delegates parsing to `app/parser/docx_parser.py`, executes the registered checkers via the runner, and returns a standardized `Report` model defined in `app/core/models.py`.
+- Shared domain models (`Issue`, `Report`, `ParsedDocument`) in `app/core/models.py` and `app/parser/structures.py` enforce a strict contract between the parser, individual checkers, and the aggregation layer, ensuring isolation of checker logic.

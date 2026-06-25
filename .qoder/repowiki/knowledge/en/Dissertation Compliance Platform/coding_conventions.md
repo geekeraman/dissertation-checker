@@ -1,0 +1,2 @@
+- Domain models use Python dataclasses in the backend and corresponding TypeScript interfaces in the frontend.
+- Validation logic is encapsulated in independent checker modules implementing a common `BaseChecker` abstract base class.

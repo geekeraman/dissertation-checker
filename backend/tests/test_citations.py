@@ -60,3 +60,15 @@ class TestCitationChecker:
         issues = self.checker.check(doc)
         order = [i for i in issues if "alphabetical" in i.message.lower() or "order" in i.message.lower()]
         assert len(order) > 0
+
+    def test_mixed_citation_styles(self):
+        paragraphs = [
+            make_paragraph("As shown in [1], and (Smith, 2024) confirmed.", paragraph_index=0),
+        ]
+        references = [
+            Reference(text="[1] Author, Title, 2024", paragraph_index=50),
+        ]
+        doc = make_document(paragraphs=paragraphs, references=references)
+        issues = self.checker.check(doc)
+        consistency = [i for i in issues if "inconsistent" in i.message.lower() or "mix" in i.message.lower()]
+        assert len(consistency) > 0

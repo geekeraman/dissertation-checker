@@ -1,0 +1,4 @@
+- The backend exposes a REST API (`/api/check`) that accepts `.docx` uploads, parses them via `python-docx`, and runs a pipeline of modular `BaseChecker` implementations through a `CheckerRunner`.
+- The frontend consumes this API via a typed Axios client, managing state between an upload view and a detailed compliance report view.
+- Cross-origin resource sharing (CORS) is configured in the FastAPI entry point to allow the Vite development server to communicate with the backend.
+- Shared domain models (Issue, Report) are defined in the backend and mirrored in the frontend TypeScript interfaces to ensure contract consistency.

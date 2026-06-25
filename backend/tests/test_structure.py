@@ -71,3 +71,34 @@ class TestStructureChecker:
         issues = self.checker.check(doc)
         volume = [i for i in issues if "volume" in i.message.lower() or "page" in i.message.lower()]
         assert len(volume) > 0
+
+    def test_section_missing_page_break(self):
+        """Section should start on new page."""
+        paragraphs = [
+            make_paragraph("Previous text", paragraph_index=0),
+            make_paragraph("КІРІСПЕ", is_heading=True, heading_level=1,
+                          has_page_break_before=False, paragraph_index=1),
+        ]
+        sections = [
+            DocumentSection(name="section", heading="КІРІСПЕ",
+                          start_paragraph_index=1, end_paragraph_index=5, level=1),
+        ]
+        doc = make_document(paragraphs=paragraphs, sections=sections)
+        issues = self.checker.check(doc)
+        page_break = [i for i in issues if "new page" in i.message.lower()]
+        assert len(page_break) > 0
+
+    def test_abstract_too_short(self):
+        """Abstract with too few words should get info."""
+        paragraphs = [
+            make_paragraph("АҢДАТПА", is_heading=True, heading_level=1, paragraph_index=0),
+            make_paragraph("Short abstract.", paragraph_index=1),
+        ]
+        sections = [
+            DocumentSection(name="section", heading="АҢДАТПА",
+                          start_paragraph_index=0, end_paragraph_index=1, level=1),
+        ]
+        doc = make_document(paragraphs=paragraphs, sections=sections)
+        issues = self.checker.check(doc)
+        word_count = [i for i in issues if "short" in i.message.lower() or "word" in i.message.lower()]
+        assert len(word_count) > 0

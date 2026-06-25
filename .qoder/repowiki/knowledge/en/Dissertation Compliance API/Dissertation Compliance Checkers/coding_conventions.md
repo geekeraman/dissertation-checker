@@ -1,0 +1,3 @@
+- Concrete checkers define class-level `name` and `description` attributes for identification.
+- Check methods decompose logic into private helper methods prefixed with underscore (e.g., `_check_figures`, `_check_margins`).
+- Issues are constructed with consistent fields: `severity`, `category`, `checker`, `location`, `message`, `suggestion`, and optional `rule_ref`.

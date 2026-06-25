@@ -1,0 +1,1 @@
+FastAPI for the web framework, Pydantic for data validation (via schemas), and python-docx for document parsing.

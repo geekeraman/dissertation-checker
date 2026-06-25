@@ -63,3 +63,33 @@ class TestCaptionChecker:
         issues = self.checker.check(doc)
         missing = [i for i in issues if "missing" in i.message.lower() or "caption" in i.message.lower()]
         assert len(missing) > 0
+
+    def test_figure_wrong_caption_prefix(self):
+        figures = [
+            Figure(number="1.1", title="Diagram of system", paragraph_index=10,
+                   has_caption=True, caption_paragraph_index=11, caption_position="below"),
+        ]
+        doc = make_document(figures=figures)
+        issues = self.checker.check(doc)
+        prefix = [i for i in issues if "Сурет" in i.message or "prefix" in i.message.lower()]
+        assert len(prefix) > 0
+
+    def test_figure_correct_kazakh_prefix(self):
+        figures = [
+            Figure(number="1.1", title="Сурет 1.1 – System diagram", paragraph_index=10,
+                   has_caption=True, caption_paragraph_index=11, caption_position="below"),
+        ]
+        doc = make_document(figures=figures)
+        issues = self.checker.check(doc)
+        prefix = [i for i in issues if "Сурет" in i.message or "prefix" in i.message.lower()]
+        assert len(prefix) == 0
+
+    def test_table_wrong_caption_prefix(self):
+        tables = [
+            Table(number="1.1", title="Data results", paragraph_index=20,
+                  has_caption=True, caption_paragraph_index=19, caption_position="above"),
+        ]
+        doc = make_document(tables=tables)
+        issues = self.checker.check(doc)
+        prefix = [i for i in issues if "Кесте" in i.message or "prefix" in i.message.lower()]
+        assert len(prefix) > 0

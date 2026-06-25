@@ -1,0 +1,1 @@
+Validates dissertation documents against GOST 7.32-2017 standards for structure, formatting, captions, and spacing.

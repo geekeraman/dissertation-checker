@@ -2,12 +2,42 @@
 
 from docx import Document
 from docx.shared import Pt, Cm, Emu
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from app.parser.structures import (
     ParsedDocument, ParsedParagraph, DocumentSection,
     Figure, Table, Reference, DocumentMetadata, DocProperties,
 )
 import re
+
+
+# Ключевые слова для распознавания структурных заголовков по тексту
+_STRUCTURAL_HEADING_KEYWORDS = {
+    "аңдатпа", "реферат", "аннотация", "abstract",
+    "мазмұны", "мазмұн", "содержание", "оглавление", "contents",
+    "кіріспе", "введение", "introduction",
+    "негізгі бөлім", "основная часть",
+    "қорытынды", "заключение", "conclusion",
+    "пайдаланылған дереккөздер тізімі", "әдебиеттер тізімі",
+    "список литературы", "список использованных источников",
+    "references", "bibliography",
+    "қосымшалар", "қосымша", "приложения", "приложение",
+    "appendix", "appendices",
+}
+
+
+def _is_structural_heading_text(text: str) -> bool:
+    """Проверяет, совпадает ли текст с известными структурными заголовками."""
+    stripped = text.strip()
+    # Реальные заголовки короткие — длинный текст точно не заголовок
+    if len(stripped) > 100:
+        return False
+    lower = stripped.lower()
+    # Убираем числовую нумерацию вначале (напр. '1 КІРІСПЕ' -> 'кіріспе')
+    clean = re.sub(r'^\d+(\.\d+)*[.\s]*', '', lower).strip()
+    for kw in _STRUCTURAL_HEADING_KEYWORDS:
+        if lower == kw or clean == kw:
+            return True
+    return False
 
 
 ALIGNMENT_MAP = {
@@ -106,10 +136,30 @@ def _detect_references(paragraphs: list[ParsedParagraph]) -> list[Reference]:
 
 
 def _build_sections(paragraphs: list[ParsedParagraph]) -> list[DocumentSection]:
-    """Build document sections from headings."""
+    """Build document sections from headings.
+
+    Распознаёт разделы по двум критериям:
+    1. Параграф имеет стиль 'Heading 1'
+    2. Текст параграфа совпадает с известным структурным заголовком
+       и параграф отформатирован как заголовок (жирный, по центру или прописные буквы)
+    """
     sections = []
     for i, para in enumerate(paragraphs):
+        is_section_heading = False
+
         if para.is_heading and para.heading_level == 1:
+            is_section_heading = True
+        elif _is_structural_heading_text(para.text):
+            # Параграф не помечен стилем Heading, но текст совпадает
+            # с известным структурным заголовком — проверяем форматирование
+            text = para.text.strip()
+            is_bold = para.bold is True
+            is_centered = para.alignment == "center"
+            is_upper = text == text.upper() and len(text) > 2
+            if is_bold or is_centered or is_upper:
+                is_section_heading = True
+
+        if is_section_heading:
             sections.append(DocumentSection(
                 name=para.text.strip(),
                 heading=para.text.strip(),
@@ -177,9 +227,20 @@ def parse_docx(file_path: str, doc_type: str) -> ParsedDocument:
         alignment = ALIGNMENT_MAP.get(para.alignment)
 
         line_spacing = None
-        if para.paragraph_format.line_spacing:
+        if para.paragraph_format.line_spacing is not None:
             try:
-                line_spacing = float(para.paragraph_format.line_spacing)
+                spacing_rule = para.paragraph_format.line_spacing_rule
+                raw_value = float(para.paragraph_format.line_spacing)
+                # Если правило — MULTIPLE (или None/по умолчанию), значение — множитель
+                if spacing_rule is None or spacing_rule == WD_LINE_SPACING.MULTIPLE:
+                    line_spacing = raw_value
+                else:
+                    # EXACTLY / AT_LEAST — значение в Twips (1/20 pt)
+                    # Если значение > 10, это точно не множитель — пропускаем
+                    if raw_value > 10:
+                        line_spacing = None
+                    else:
+                        line_spacing = raw_value
             except (ValueError, TypeError):
                 pass
 

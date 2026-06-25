@@ -1,0 +1,1 @@
+Python 3.11+ with FastAPI and python-docx for the backend; React 18 with TypeScript and Vite for the frontend.

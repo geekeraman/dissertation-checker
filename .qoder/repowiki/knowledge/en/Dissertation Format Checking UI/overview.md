@@ -1,0 +1,1 @@
+A React single-page application for uploading .docx dissertations and displaying GOST 7.32-2017 compliance reports with severity-filtered issue lists.

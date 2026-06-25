@@ -1,0 +1,4 @@
+- Entry point `main.tsx` mounts `App` which conditionally renders `UploadPage` or `ReportPage` based on local report state.
+- `api/client.ts` defines TypeScript interfaces (`Report`, `Issue`) and Axios-based API calls to a backend at `VITE_API_URL`.
+- Pages delegate to presentational components: `FileUpload` (react-dropzone wrapper), `ReportSummary` (metrics dashboard), `IssueList` (filterable list), and `IssueCard` (individual finding display).
+- Styling uses Tailwind CSS v4 via the `@tailwindcss/vite` plugin, with a custom Google-Material-inspired design system hardcoded in utility classes.

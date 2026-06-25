@@ -1,0 +1,1 @@
+Orchestrates a FastAPI backend and React frontend to provide a unified workflow for uploading, parsing, and validating academic documents against GOST standards.

@@ -1,0 +1,1 @@
+React 18 with Vite 5 build toolchain; Tailwind CSS v4 for styling; axios for HTTP client; react-dropzone for file handling.

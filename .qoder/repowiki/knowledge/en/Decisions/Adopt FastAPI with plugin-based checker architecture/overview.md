@@ -1,0 +1,1 @@
+Adopt FastAPI with plugin-based checker architecture — Implement the backend using FastAPI, structured with a `BaseChecker` abstract interface in `backend/app/checkers/base.

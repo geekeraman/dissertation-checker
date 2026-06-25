@@ -1,0 +1,7 @@
+schema_version: 1
+module_path: decisions/7c952011f637_766df9796829
+title: Use React + Vite + TypeScript for the frontend
+scope: []
+source_files: []
+depends_on: []
+related_to: []

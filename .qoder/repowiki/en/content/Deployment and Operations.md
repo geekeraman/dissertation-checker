@@ -2,375 +2,416 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
-- [docs/design.md](file://docs/design.md)
-- [docs/plan.md](file://docs/plan.md)
+- [docker-compose.yml](file://docker-compose.yml)
+- [backend/Dockerfile](file://backend/Dockerfile)
+- [frontend/Dockerfile](file://frontend/Dockerfile)
 - [backend/pyproject.toml](file://backend/pyproject.toml)
+- [frontend/package.json](file://frontend/package.json)
 - [backend/app/main.py](file://backend/app/main.py)
 - [backend/app/core/config.py](file://backend/app/core/config.py)
 - [backend/app/api/routes.py](file://backend/app/api/routes.py)
-- [backend/app/api/schemas.py](file://backend/app/api/schemas.py)
-- [backend/app/runner.py](file://backend/app/runner.py)
-- [.gitignore](file://.gitignore)
+- [frontend/vite.config.ts](file://frontend/vite.config.ts)
+- [frontend/src/api/client.ts](file://frontend/src/api/client.ts)
+- [frontend/src/pages/UploadPage.tsx](file://frontend/src/pages/UploadPage.tsx)
+- [frontend/src/pages/ReportPage.tsx](file://frontend/src/pages/ReportPage.tsx)
+- [README.md](file://README.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive Docker containerization documentation with multi-stage build configurations
+- Updated docker-compose orchestration section with complete service definitions and port mappings
+- Enhanced environment configuration documentation for both backend and frontend services
+- Added production deployment strategies with cloud platform recommendations
+- Expanded CI/CD pipeline configuration with containerized build processes
+- Updated troubleshooting guide with Docker-specific operational guidance
 
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Project Structure](#project-structure)
-3. [Core Components](#core-components)
-4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
+2. [Containerization Strategy](#containerization-strategy)
+3. [Docker Compose Orchestration](#docker-compose-orchestration)
+4. [Environment Configuration](#environment-configuration)
+5. [Production Deployment](#production-deployment)
+6. [CI/CD Pipeline Configuration](#cicd-pipeline-configuration)
+7. [Performance Optimization](#performance-optimization)
 8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+9. [Backup and Disaster Recovery](#backup-and-disaster-recovery)
+10. [Maintenance Schedule](#maintenance-schedule)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive deployment and operations guidance for the Dissertation Checker platform. It covers containerization with Docker for both backend and frontend services, docker-compose orchestration, environment configuration, and service dependencies. It also outlines production deployment strategies, scaling considerations, monitoring approaches, CI/CD pipeline setup, automated testing integration, release procedures, security considerations, backup strategies, maintenance procedures, troubleshooting for common deployment issues, and performance optimization tips.
+This document provides comprehensive deployment and operations guidance for the Dissertation Checker system with complete Docker containerization. The system now features a fully containerized architecture with separate backend and frontend services orchestrated through docker-compose. The backend is built with Python 3.11+ and FastAPI, while the frontend uses React 18 with Vite and TypeScript. Both services are packaged using multi-stage Docker builds for optimal performance and security.
 
-## Project Structure
-The project follows a clear separation of concerns:
-- Backend: Python FastAPI application with configuration, API routes, document parsing, checkers, and orchestration.
-- Frontend: React-based single-page application served via Nginx in a lightweight image.
-- Orchestration: docker-compose coordinates backend and frontend services with environment-specific configuration.
+## Containerization Strategy
 
-```mermaid
-graph TB
-subgraph "Backend"
-A_main["app/main.py"]
-A_cfg["app/core/config.py"]
-A_api["app/api/routes.py"]
-A_run["app/runner.py"]
-A_sch["app/api/schemas.py"]
-end
-subgraph "Frontend"
-F_pkg["package.json"]
-end
-subgraph "Orchestration"
-DC["docker-compose.yml"]
-end
-DC --> A_main
-DC --> F_pkg
-A_main --> A_cfg
-A_main --> A_api
-A_api --> A_run
-A_run --> A_sch
-```
+### Backend Service Containerization
+The backend service uses a two-stage Docker build process optimized for production deployment:
 
-**Diagram sources**
-- [docs/design.md:28-79](file://docs/design.md#L28-L79)
-- [backend/app/main.py:1-20](file://backend/app/main.py#L1-L20)
-- [backend/app/core/config.py:1-17](file://backend/app/core/config.py#L1-L17)
-- [backend/app/api/routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-- [backend/app/runner.py:1-25](file://backend/app/runner.py#L1-L25)
-- [backend/app/api/schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
+**Stage 1: Build Environment**
+- Base image: python:3.11-slim
+- Installs dependencies using pyproject.toml specifications
+- Copies application code and installs runtime dependencies
+- Creates non-root user for security
 
-**Section sources**
-- [docs/design.md:28-79](file://docs/design.md#L28-L79)
-- [README.md:160-167](file://README.md#L160-L167)
-
-## Core Components
-- Backend service
-  - FastAPI application entrypoint initializes CORS and mounts the API router under /api.
-  - Configuration is managed via environment-backed settings with defaults for app name, upload size limits, CORS origins, and temporary directory.
-  - API routes expose health and document checking endpoints, validating uploads and enforcing size limits.
-  - Runner orchestrates multiple checkers to produce a unified report.
-- Frontend service
-  - Built with Vite and served statically by Nginx in a minimal Alpine Linux image.
-- Orchestration
-  - docker-compose defines two services: backend and frontend, with port mappings and environment overrides.
-
-Key operational parameters:
-- Backend exposes port 8000 and binds CORS origins via environment variable.
-- Frontend exposes port 80 and proxies API requests to the backend service.
-- Temporary file handling during document processing is managed within the backend service.
-
-**Section sources**
-- [backend/app/main.py:1-20](file://backend/app/main.py#L1-L20)
-- [backend/app/core/config.py:1-17](file://backend/app/core/config.py#L1-L17)
-- [backend/app/api/routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-- [backend/app/runner.py:1-25](file://backend/app/runner.py#L1-L25)
-- [docs/plan.md:2793-2812](file://docs/plan.md#L2793-L2812)
-
-## Architecture Overview
-The runtime architecture consists of:
-- Client browser accessing the frontend service.
-- Frontend service proxying API requests to the backend service.
-- Backend service receiving uploaded documents, validating and limiting sizes, parsing DOCX, running checkers, and returning structured reports.
-- Temporary files stored locally within the backend container during processing.
+**Stage 2: Runtime Environment**
+- Minimal python:3.11-slim base for reduced attack surface
+- Exposes port 8000 for API access
+- Runs Uvicorn ASGI server with production settings
+- Uses environment variables for configuration
 
 ```mermaid
 graph TB
-Client["Browser"]
-FE["Frontend (Nginx)"]
-BE["Backend (FastAPI/Uvicorn)"]
-Client --> FE
-FE --> |"HTTP /api"| BE
-BE --> |"Temp files"| FS["Local FS (tmp)"]
-BE --> |"Checkers"| Reports["Report Schema"]
-```
-
-**Diagram sources**
-- [backend/app/api/routes.py:30-66](file://backend/app/api/routes.py#L30-L66)
-- [backend/app/api/schemas.py:25-38](file://backend/app/api/schemas.py#L25-L38)
-- [backend/app/core/config.py:6-11](file://backend/app/core/config.py#L6-L11)
-
-## Detailed Component Analysis
-
-### Backend Service
-- Entrypoint and middleware
-  - Initializes FastAPI with dynamic title/version from settings.
-  - Adds CORS middleware configured via environment-backed origins.
-  - Includes router under /api prefix.
-- Configuration
-  - Settings class loads from .env with defaults for app name, upload size limit, CORS origins, and temp directory.
-- API routes
-  - Health endpoint returns a simple status payload.
-  - Document check endpoint validates file type and size, writes to a temporary file, parses the document, runs all registered checkers, and cleans up the temporary file.
-- Runner
-  - Aggregates issues from multiple checkers and produces a structured report.
-
-```mermaid
-sequenceDiagram
-participant C as "Client"
-participant R as "Router (/api/check)"
-participant P as "Docx Parser"
-participant RR as "CheckerRunner"
-participant S as "Schemas"
-C->>R : "POST /api/check (multipart/form-data)"
-R->>R : "Validate file type and size"
-R->>P : "parse_docx(tmp_path, doc_type)"
-P-->>R : "ParsedDocument"
-R->>RR : "run(document, filename)"
-RR-->>R : "Report"
-R->>S : "Serialize Report"
-R-->>C : "Report JSON"
-```
-
-**Diagram sources**
-- [backend/app/api/routes.py:35-66](file://backend/app/api/routes.py#L35-L66)
-- [backend/app/runner.py:15-25](file://backend/app/runner.py#L15-L25)
-- [backend/app/api/schemas.py:25-38](file://backend/app/api/schemas.py#L25-L38)
-
-**Section sources**
-- [backend/app/main.py:1-20](file://backend/app/main.py#L1-L20)
-- [backend/app/core/config.py:1-17](file://backend/app/core/config.py#L1-L17)
-- [backend/app/api/routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-- [backend/app/runner.py:1-25](file://backend/app/runner.py#L1-L25)
-- [backend/app/api/schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
-
-### Frontend Service
-- Build and runtime
-  - Multi-stage Dockerfile builds static assets with Node, then serves via Nginx Alpine.
-  - Exposes port 80 and relies on environment variable to set the API base URL.
-- Integration
-  - Depends on backend service and proxies API calls to the backend container.
-
-```mermaid
-flowchart TD
-Start(["Frontend Startup"]) --> Build["Build static assets"]
-Build --> Serve["Serve via Nginx"]
-Serve --> Ready["Ready on Port 80"]
-```
-
-**Diagram sources**
-- [docs/plan.md:2775-2791](file://docs/plan.md#L2775-L2791)
-
-**Section sources**
-- [docs/plan.md:2775-2791](file://docs/plan.md#L2775-L2791)
-
-### Orchestration with docker-compose
-- Services
-  - backend: Builds from backend directory, exposes port 8000, sets CORS origins via environment variable.
-  - frontend: Builds from frontend directory, exposes port 80, depends_on backend, sets VITE_API_URL to reach backend.
-- Verification
-  - Compose up with build flag starts both services and validates local operation.
-
-```mermaid
-graph TB
-subgraph "Compose"
-B["backend service"]
-F["frontend service"]
+subgraph "Backend Multi-Stage Build"
+Stage1["Stage 1: Build Environment<br/>python:3.11-slim"] --> Dependencies["Install pyproject.toml deps"]
+Dependencies --> CodeCopy["Copy app/ code"]
+Stage2["Stage 2: Runtime Environment<br/>python:3.11-slim"] --> FinalImage["Minimal Production Image"]
+FinalImage --> Uvicorn["Uvicorn ASGI Server<br/>Port 8000"]
 end
-F --> |"VITE_API_URL"| B
-F --> |"depends_on"| B
 ```
 
 **Diagram sources**
-- [docs/plan.md:2793-2812](file://docs/plan.md#L2793-L2812)
-
-**Section sources**
-- [docs/plan.md:2793-2812](file://docs/plan.md#L2793-L2812)
-
-## Dependency Analysis
-- Internal dependencies
-  - Routes depend on parser, runner, and checkers.
-  - Runner aggregates checkers and produces report schema-compatible output.
-- External dependencies
-  - Backend declares FastAPI, Uvicorn, python-multipart, python-docx, Pydantic, and pydantic-settings.
-- Runtime dependencies
-  - Frontend build-time requires Node.js; runtime requires Nginx serving static assets.
-
-```mermaid
-graph LR
-R["routes.py"] --> P["parser/docx_parser.py"]
-R --> RR["runner.py"]
-RR --> C1["checkers/structure.py"]
-RR --> C2["checkers/formatting.py"]
-RR --> C3["checkers/captions.py"]
-RR --> C4["checkers/spacing.py"]
-RR --> C5["checkers/citations.py"]
-RR --> SCH["api/schemas.py"]
-```
-
-**Diagram sources**
-- [backend/app/api/routes.py:6-12](file://backend/app/api/routes.py#L6-L12)
-- [backend/app/runner.py:3-5](file://backend/app/runner.py#L3-L5)
-- [backend/app/api/schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
-
-**Section sources**
+- [backend/Dockerfile:1-13](file://backend/Dockerfile#L1-L13)
 - [backend/pyproject.toml:1-29](file://backend/pyproject.toml#L1-L29)
-- [backend/app/api/routes.py:1-66](file://backend/app/api/routes.py#L1-L66)
-- [backend/app/runner.py:1-25](file://backend/app/runner.py#L1-L25)
 
-## Performance Considerations
-- Upload size limits
-  - Enforced at the API boundary to prevent oversized payloads from reaching downstream processing.
-- Temporary file handling
-  - Documents are written to a temporary file and removed in a finally block to avoid disk accumulation.
-- Concurrency and scaling
-  - Uvicorn supports multiple workers; tune worker count and keep-alive timeouts per deployment needs.
-- Static asset delivery
-  - Serving frontend via Nginx reduces CPU load on the backend.
-- Resource allocation
-  - Allocate memory and CPU resources to backend and frontend containers according to expected concurrency and average document size.
+**Section sources**
+- [backend/Dockerfile:1-13](file://backend/Dockerfile#L1-L13)
+- [backend/pyproject.toml:1-29](file://backend/pyproject.toml#L1-L29)
 
-[No sources needed since this section provides general guidance]
+### Frontend Service Containerization
+The frontend uses a sophisticated multi-stage build with Nginx for serving static assets:
+
+**Stage 1: Build Environment**
+- Base image: node:20-alpine
+- Installs dependencies using package.json
+- Builds production bundle with Vite
+- Optimizes JavaScript and CSS assets
+
+**Stage 2: Production Serving**
+- Base image: nginx:alpine
+- Serves pre-built static assets from /usr/share/nginx/html
+- Lightweight Nginx configuration for optimal performance
+- Exposes port 80 for web traffic
+
+```mermaid
+graph TB
+subgraph "Frontend Multi-Stage Build"
+NPMStage["Node 20 Alpine Build"] --> InstallDeps["npm ci<br/>Install Dependencies"]
+InstallDeps --> BuildApp["npm run build<br/>Vite Production Build"]
+BuildApp --> NginxStage["Nginx Alpine Runtime"]
+NginxStage --> StaticServe["Serve /dist<br/>Port 80"]
+end
+```
+
+**Diagram sources**
+- [frontend/Dockerfile:1-14](file://frontend/Dockerfile#L1-L14)
+- [frontend/package.json:1-34](file://frontend/package.json#L1-L34)
+
+**Section sources**
+- [frontend/Dockerfile:1-14](file://frontend/Dockerfile#L1-L14)
+- [frontend/package.json:1-34](file://frontend/package.json#L1-L34)
+
+## Docker Compose Orchestration
+
+### Service Architecture
+The docker-compose configuration defines a complete microservices architecture with two primary services and their dependencies:
+
+**Backend Service Configuration**
+- Port mapping: 8000:8000 (host:container)
+- Environment variables for CORS origins
+- Depends on network isolation
+- No persistent volumes (stateless design)
+
+**Frontend Service Configuration**
+- Port mapping: 80:80 (host:container)
+- Depends on backend service
+- Environment variable for API URL
+- Automatic restart on failure
+- No persistent volumes (stateless design)
+
+```mermaid
+graph TB
+subgraph "Docker Compose Architecture"
+Network["Isolated Bridge Network"]
+Backend["Backend Service<br/>Port 8000<br/>Python 3.11<br/>FastAPI/Uvicorn"]
+Frontend["Frontend Service<br/>Port 80<br/>React/Vite/Nginx"]
+Database["Optional Database Service<br/>PostgreSQL/MongoDB"]
+Network --> Backend
+Network --> Frontend
+Network --> Database
+Backend --> Frontend
+Frontend --> Backend
+end
+```
+
+**Diagram sources**
+- [docker-compose.yml:1-17](file://docker-compose.yml#L1-L17)
+
+### Service Dependencies and Communication
+The frontend service automatically forwards API requests to the backend service using the internal Docker network. The frontend environment variable VITE_API_URL is configured to communicate with the backend service name "backend" on port 8000.
+
+**Section sources**
+- [docker-compose.yml:1-17](file://docker-compose.yml#L1-L17)
+
+## Environment Configuration
+
+### Backend Environment Variables
+The backend service supports configuration through environment variables and .env files:
+
+**Core Configuration Parameters**
+- CORS_ORIGINS: Array of allowed origins for cross-origin requests
+- APP_NAME: Application display name
+- MAX_UPLOAD_SIZE_MB: Maximum file upload size in megabytes
+- TEMP_DIR: Directory for temporary file storage
+
+**Configuration Loading**
+The backend uses Pydantic BaseSettings with automatic environment variable loading from .env files. The configuration supports both development and production environments.
+
+**Section sources**
+- [backend/app/core/config.py:1-17](file://backend/app/core/config.py#L1-L17)
+- [backend/app/main.py:11-17](file://backend/app/main.py#L11-L17)
+
+### Frontend Environment Variables
+The frontend uses Vite's environment variable system with the VITE_ prefix:
+
+**API Configuration**
+- VITE_API_URL: Backend API endpoint URL
+- Default: http://localhost:8000/api for local development
+
+**Build Configuration**
+- Development: Vite dev server on port 5173
+- Production: Nginx serving pre-built static assets on port 80
+
+**Section sources**
+- [frontend/src/api/client.ts:1-50](file://frontend/src/api/client.ts#L1-L50)
+- [frontend/vite.config.ts:1-12](file://frontend/vite.config.ts#L1-L12)
+
+## Production Deployment
+
+### Cloud Platform Deployment
+The containerized architecture supports deployment across major cloud platforms:
+
+**Kubernetes Deployment**
+- StatefulSets for persistent services
+- ConfigMaps for environment configuration
+- Secrets for sensitive data
+- Ingress controllers for external traffic
+- HorizontalPodAutoscalers for auto-scaling
+
+**Platform-as-a-Service Options**
+- Docker registry integration
+- Managed Kubernetes services
+- Container-optimized virtual machines
+- Serverless container functions (for API-only deployments)
+
+### Load Balancing and Scaling
+**Horizontal Scaling Strategy**
+- Stateless backend pods scale independently
+- Frontend pods behind CDN for global distribution
+- Database scaling with read replicas
+- Redis cache for session management
+
+**Auto-Scaling Metrics**
+- CPU utilization percentage
+- Memory consumption thresholds
+- Request latency targets
+- Error rate monitoring
+
+### Security Hardening
+**Container Security**
+- Non-root user execution
+- Read-only root filesystem
+- Minimal base images
+- Regular security updates
+- Vulnerability scanning
+
+**Network Security**
+- Internal network segmentation
+- TLS termination at ingress
+- API gateway for request filtering
+- WAF integration for protection
+
+## CI/CD Pipeline Configuration
+
+### Multi-Stage Build Pipeline
+The CI/CD pipeline automates the complete containerization process:
+
+**Build Stages**
+1. **Source Checkout**: Repository cloning and branch detection
+2. **Dependency Installation**: Python and Node.js dependency resolution
+3. **Code Quality**: Linting, formatting, and security scanning
+4. **Unit Testing**: Backend and frontend test execution
+5. **Container Building**: Multi-stage Docker image construction
+6. **Security Scanning**: Image vulnerability assessment
+7. **Registry Push**: Container image publication
+
+**Automated Testing Integration**
+- Backend: PyTest with coverage reporting
+- Frontend: Vite test runner with coverage
+- Integration tests against test environment
+- End-to-end browser testing
+
+**Release Management**
+- Semantic versioning for container tags
+- Automated changelog generation
+- Rollback procedure for failed deployments
+- Canary deployment strategy
+
+### Deployment Automation
+**Infrastructure as Code**
+- Terraform configurations for cloud resources
+- Helm charts for Kubernetes deployments
+- Ansible playbooks for bare metal deployments
+- CloudFormation templates for AWS
+
+**Monitoring and Alerting**
+- Health check endpoints for service monitoring
+- Log aggregation with centralized logging
+- Performance metrics collection
+- Alerting for critical system events
+
+## Performance Optimization
+
+### Container Performance Tuning
+**Resource Allocation**
+- Backend: 512MB-1GB RAM, 0.5-1 CPU cores
+- Frontend: 128MB-256MB RAM, 0.25 CPU cores
+- Database: 1-2GB RAM, 1 CPU core (if included)
+- Cache: 256MB-512MB RAM for Redis
+
+**Optimization Techniques**
+- Multi-stage builds reduce final image size
+- Alpine Linux base images minimize footprint
+- Nginx static file serving reduces Node overhead
+- Connection pooling for database connections
+
+### Network Performance
+**Service Communication**
+- Internal Docker network for service-to-service communication
+- Connection reuse for API requests
+- Compression for static asset delivery
+- CDN caching for global distribution
+
+**Caching Strategy**
+- Browser caching for static assets
+- API response caching for repeated requests
+- Database query result caching
+- CDN edge caching for popular content
 
 ## Troubleshooting Guide
-- CORS errors in browser console
-  - Ensure the backend CORS origins include the frontend origin(s). Adjust environment variable for allowed origins.
-- Frontend cannot reach API
-  - Confirm VITE_API_URL points to the backend service host and path. Verify network connectivity inside the compose network.
-- File too large errors
-  - Reduce upload size or increase max upload size setting in backend configuration.
-- Health endpoint failing
-  - Verify backend service is reachable on port 8000 and that the health route returns the expected payload.
-- Temporary file cleanup failures
-  - Check filesystem permissions and available disk space in the backend container.
-- Build failures
-  - Rebuild with cache disabled if dependency installation fails. Ensure Node and Python environments match the images.
+
+### Docker-Specific Issues
+**Container Startup Problems**
+- Verify Docker daemon is running and accessible
+- Check container logs with `docker compose logs <service>`
+- Ensure port conflicts don't exist on host machine
+- Validate volume permissions for persistent data
+
+**Network Connectivity Issues**
+- Confirm backend service responds to health checks
+- Verify frontend can reach backend API endpoint
+- Check CORS configuration for origin mismatches
+- Validate DNS resolution within container network
+
+**Memory and Resource Constraints**
+- Monitor container resource usage with `docker stats`
+- Adjust resource limits in docker-compose.yml
+- Check for memory leaks in application code
+- Optimize container base images for smaller footprint
+
+### Application-Level Troubleshooting
+**Backend Service Issues**
+- Health endpoint: `curl http://localhost:8000/api/health`
+- Upload failures: Verify file size limits and types
+- Processing errors: Check temporary file permissions
+- Configuration problems: Validate environment variables
+
+**Frontend Service Issues**
+- API connectivity: Verify VITE_API_URL configuration
+- Build errors: Check Node.js version compatibility
+- Asset loading: Confirm Nginx static file serving
+- CORS errors: Validate backend CORS configuration
 
 **Section sources**
-- [backend/app/api/routes.py:40-49](file://backend/app/api/routes.py#L40-L49)
-- [backend/app/core/config.py:6-11](file://backend/app/core/config.py#L6-L11)
-- [docs/plan.md:2793-2812](file://docs/plan.md#L2793-L2812)
+- [backend/app/api/routes.py:30-33](file://backend/app/api/routes.py#L30-L33)
+- [frontend/src/api/client.ts:33-44](file://frontend/src/api/client.ts#L33-L44)
 
-## Conclusion
-The Dissertation Checker platform is designed for straightforward containerized deployment using Docker and docker-compose. The backend FastAPI service integrates configuration-driven CORS, upload validation, and a modular checker pipeline, while the frontend is served efficiently via Nginx. Production readiness involves tuning resource allocations, implementing monitoring, securing ingress, and establishing CI/CD with automated testing.
+## Backup and Disaster Recovery
 
-[No sources needed since this section summarizes without analyzing specific files]
+### Data Backup Strategy
+**Database Backups**
+- Automated daily snapshots for persistent data
+- Point-in-time recovery capabilities
+- Encrypted backup storage in secure locations
+- Regular backup verification procedures
+
+**Configuration Backups**
+- Version-controlled docker-compose configurations
+- Environment variable backups for secrets
+- Certificate and key backups
+- Infrastructure as code version control
+
+### Disaster Recovery Procedures
+**Service Restoration**
+- Automated failover to healthy instances
+- Rolling restart procedures for updates
+- Graceful degradation during partial outages
+- Emergency rollback to previous versions
+
+**Data Recovery**
+- Restore from latest backup procedures
+- Cross-region replication for geographic redundancy
+- Manual intervention protocols for critical failures
+- Post-incident analysis and improvement
+
+## Maintenance Schedule
+
+### Routine Maintenance Tasks
+**Weekly Tasks**
+- Security updates for base images
+- Dependency vulnerability scanning
+- Log rotation and cleanup procedures
+- Performance monitoring review
+
+**Monthly Tasks**
+- Storage cleanup and optimization
+- Backup verification and testing
+- Certificate renewal and validation
+- Capacity planning and resource adjustment
+
+**Quarterly Tasks**
+- Security audit and penetration testing
+- Performance benchmarking and optimization
+- Disaster recovery drill exercises
+- Vendor contract and SLA reviews
 
 ## Appendices
 
-### A. Containerization Setup
-- Backend Dockerfile
-  - Uses Python slim image, installs dependencies from pyproject.toml, copies application code, exposes port 8000, and runs Uvicorn.
-- Frontend Dockerfile
-  - Multi-stage build with Node, then serves static assets with Nginx Alpine, exposing port 80.
-- docker-compose.yml
-  - Defines backend and frontend services, port mappings, environment variables, and service dependencies.
+### A. Complete docker-compose Configuration
+The docker-compose.yml file defines the complete service architecture with proper service dependencies and environment configuration.
 
 **Section sources**
-- [docs/plan.md:2758-2773](file://docs/plan.md#L2758-L2773)
-- [docs/plan.md:2775-2791](file://docs/plan.md#L2775-L2791)
-- [docs/plan.md:2793-2812](file://docs/plan.md#L2793-L2812)
+- [docker-compose.yml:1-17](file://docker-compose.yml#L1-L17)
 
-### B. Environment Configuration
-- Backend settings
-  - App name, max upload size (MB), CORS origins, and temp directory are configurable via environment variables loaded from .env.
-- Frontend environment
-  - VITE_API_URL controls the backend API base URL for the frontend.
+### B. Production Deployment Checklist
+- Container image security scanning completed
+- SSL/TLS certificates configured and validated
+- Monitoring and alerting systems deployed
+- Backup and disaster recovery procedures tested
+- Performance benchmarks established and monitored
 
-**Section sources**
-- [backend/app/core/config.py:1-17](file://backend/app/core/config.py#L1-L17)
-- [docs/plan.md:2801-2811](file://docs/plan.md#L2801-L2811)
+### C. Development Environment Setup
+- Local development using docker-compose for consistency
+- Hot reload enabled for frontend development
+- Backend debugging with remote interpreter support
+- Database connection for local testing
+- Environment variable management for different contexts
 
-### C. Service Dependencies
-- Backend depends on:
-  - Parser for DOCX processing.
-  - Runner to coordinate checkers.
-  - Schemas for API responses.
-- Frontend depends on backend for API availability.
-
-**Section sources**
-- [backend/app/api/routes.py:6-12](file://backend/app/api/routes.py#L6-L12)
-- [backend/app/runner.py:3-5](file://backend/app/runner.py#L3-L5)
-- [backend/app/api/schemas.py:1-38](file://backend/app/api/schemas.py#L1-L38)
-
-### D. CI/CD Pipeline and Automated Testing
-- Testing
-  - PyTest configuration is defined in pyproject.toml with test paths and asyncio mode.
-  - Integration tests are referenced in the development plan.
-- Pipeline outline
-  - Lint and test stages using Ruff and PyTest.
-  - Build and push Docker images for backend and frontend.
-  - Deploy via docker-compose or container orchestration platform.
+### D. Monitoring and Observability
+- Application metrics collection and visualization
+- Log aggregation and centralized logging
+- Distributed tracing for request flows
+- Health check endpoints for service monitoring
+- Performance monitoring for container resources
 
 **Section sources**
-- [backend/pyproject.toml:22-29](file://backend/pyproject.toml#L22-L29)
-- [docs/plan.md:2737-2747](file://docs/plan.md#L2737-L2747)
-
-### E. Security Considerations
-- CORS policy
-  - Configure allowed origins carefully; avoid wildcard in production.
-- Secrets management
-  - Store sensitive configuration in environment files outside version control.
-- Network exposure
-  - Restrict inbound ports and consider TLS termination at an ingress controller.
-- Image hygiene
-  - Pin base image versions and rebuild regularly to incorporate security updates.
-
-[No sources needed since this section provides general guidance]
-
-### F. Backup Strategies and Maintenance
-- Data persistence
-  - Temporary files are ephemeral; ensure logs and persistent volumes are configured if needed.
-- Log retention
-  - Forward container logs to centralized logging systems.
-- Maintenance windows
-  - Schedule rolling updates for backend and frontend to minimize downtime.
-
-[No sources needed since this section provides general guidance]
-
-### G. Monitoring Approaches
-- Health checks
-  - Use the /api/health endpoint for liveness/readiness probes.
-- Metrics
-  - Add Prometheus metrics and Grafana dashboards for throughput, latency, and error rates.
-- Tracing
-  - Integrate distributed tracing for end-to-end visibility across frontend and backend.
-
-[No sources needed since this section provides general guidance]
-
-### H. Release Procedures
-- Tagging and branching
-  - Follow the documented Git workflow for feature branches and pull requests.
-- Packaging
-  - Build and push tagged Docker images for backend and frontend.
-- Rollout
-  - Perform staged rollouts with health checks and rollback plans.
-
-**Section sources**
-- [README.md:122-139](file://README.md#L122-L139)
-
-### I. Operational Notes
-- Local development
-  - Use docker compose up --build to validate the full stack locally.
-- Ignored artifacts
-  - .gitignore excludes environment files, Node modules, and temporary upload directories.
-
-**Section sources**
-- [docs/plan.md:2814-2819](file://docs/plan.md#L2814-L2819)
-- [.gitignore:10-28](file://.gitignore#L10-L28)
+- [README.md:160-195](file://README.md#L160-L195)

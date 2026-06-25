@@ -1,0 +1,7 @@
+schema_version: 1
+module_path: decisions/7c952011f637_486bc9fb9356
+title: Adopt FastAPI with plugin-based checker architecture
+scope: []
+source_files: []
+depends_on: []
+related_to: []

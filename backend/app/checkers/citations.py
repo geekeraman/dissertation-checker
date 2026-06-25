@@ -9,7 +9,7 @@ from app.parser.structures import ParsedDocument
 # Pattern to match bracket-style citations like [1], [2,3], [1-5]
 BRACKET_CITATION = re.compile(r"\[(\d+(?:[,\s\-–]\d+)*)\]")
 # Pattern to match author-year citations like (Author, 2024)
-AUTHOR_YEAR_CITATION = re.compile(r"\(([A-ZА-Я][a-zа-я]+(?:\s(?:et al|и др)),?\s\d{4})\)")
+AUTHOR_YEAR_CITATION = re.compile(r"\(([A-ZА-Я][a-zа-я]+(?:\s(?:et al|и др))?,?\s\d{4})\)")
 
 
 class CitationChecker(BaseChecker):
@@ -20,6 +20,7 @@ class CitationChecker(BaseChecker):
         issues: list[Issue] = []
         issues.extend(self._check_citation_reference_match(document))
         issues.extend(self._check_reference_order(document))
+        issues.extend(self._check_citation_consistency(document))
         return issues
 
     def _extract_citations(self, document: ParsedDocument) -> dict[int, list[int]]:
@@ -92,6 +93,35 @@ class CitationChecker(BaseChecker):
                     suggestion="Either cite this reference in the text or remove it from the reference list",
                     rule_ref="Sec. 6.8",
                 ))
+
+        return issues
+
+    def _check_citation_consistency(self, document: ParsedDocument) -> list[Issue]:
+        """Check that all citations use the same style (bracket or author-year)."""
+        issues = []
+        has_bracket = False
+        has_author_year = False
+
+        for para in document.paragraphs:
+            if para.is_heading:
+                continue
+            if BRACKET_CITATION.search(para.text):
+                has_bracket = True
+            if AUTHOR_YEAR_CITATION.search(para.text):
+                has_author_year = True
+            if has_bracket and has_author_year:
+                break
+
+        if has_bracket and has_author_year:
+            issues.append(Issue(
+                severity="warning",
+                category="citations",
+                checker=self.name,
+                location=IssueLocation(),
+                message="Inconsistent citation style — document mixes bracket [1] and author-year (Author, 2024) formats",
+                suggestion="Use either bracket-style or author-year-style citations consistently throughout the document",
+                rule_ref="Sec. 6.8",
+            ))
 
         return issues
 

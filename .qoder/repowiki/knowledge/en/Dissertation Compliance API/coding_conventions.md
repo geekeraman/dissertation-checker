@@ -1,0 +1,2 @@
+- All compliance checkers inherit from the `BaseChecker` ABC and implement the `check(document: ParsedDocument) -> list[Issue]` method.
+- Domain entities like `Issue` and `Report` are defined as dataclasses in `app/core/models.py` to ensure immutability and clear structure across modules.

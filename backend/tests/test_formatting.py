@@ -89,3 +89,31 @@ class TestFormattingChecker:
         issues = self.checker.check(doc)
         align_issues = [i for i in issues if "justif" in i.message.lower() or "alignment" in i.message.lower()]
         assert len(align_issues) > 0
+
+    def test_heading_not_centered(self):
+        paragraphs = [
+            make_paragraph("КІРІСПЕ", is_heading=True, heading_level=1,
+                          alignment="left", bold=True, paragraph_index=0),
+        ]
+        doc = make_document(paragraphs=paragraphs)
+        issues = self.checker.check(doc)
+        center = [i for i in issues if "centered" in i.message.lower()]
+        assert len(center) > 0
+
+    def test_wrong_paragraph_indent(self):
+        paragraphs = [
+            make_paragraph("Body text here.", first_line_indent=0.0, paragraph_index=0),
+        ]
+        doc = make_document(paragraphs=paragraphs)
+        issues = self.checker.check(doc)
+        indent = [i for i in issues if "indent" in i.message.lower()]
+        assert len(indent) > 0
+
+    def test_correct_paragraph_indent(self):
+        paragraphs = [
+            make_paragraph("Body text here.", first_line_indent=1.25, paragraph_index=0),
+        ]
+        doc = make_document(paragraphs=paragraphs)
+        issues = self.checker.check(doc)
+        indent = [i for i in issues if "indent" in i.message.lower()]
+        assert len(indent) == 0

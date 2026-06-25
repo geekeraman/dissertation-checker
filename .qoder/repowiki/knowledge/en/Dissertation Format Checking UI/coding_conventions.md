@@ -1,0 +1,3 @@
+- Components use inline Tailwind utility classes with a consistent color palette (#1a73e8 primary, #d93025 error, #202124 text) rather than external CSS modules or theme config.
+- TypeScript interfaces for API data shapes are defined in `api/client.ts` and imported by consuming components, ensuring type safety across the data flow.
+- State management for page-level flows (upload vs report view) is handled via `useState` in the parent `App` component, passing callbacks down to children.
