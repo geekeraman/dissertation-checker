@@ -14,33 +14,7 @@ build/
 # IDE
 .vscode/
 .idea/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Node
-node_modules/
-frontend/dist/
-
-# Uploads
-backend/uploads/
-backend/tmp/
-# Python
-__pycache__/
-*.py[cod]
-.venv/
-*.egg-info/
-dist/
-build/
-
-# Environment
-.env
-.env.local
-
-# IDE
-.vscode/
-.idea/
+.qoder/
 
 # OS
 .DS_Store
